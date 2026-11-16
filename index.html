@@ -2,8 +2,9 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
   <meta name="theme-color" content="#5c94fc" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>TYPING.io - Mobile Edition</title>
@@ -52,6 +53,9 @@
       outline: none;
       caret-color: transparent;
       font-size: 16px;
+      line-height: 1;
+      overflow: hidden;
+      white-space: nowrap;
       z-index: 20;
       user-select: text;
       -webkit-user-select: text;
@@ -61,16 +65,17 @@
 <body>
   <div id="app-wrapper">
     <canvas id="gameCanvas" width="480" height="854"></canvas>
-    <input
+    <div
       id="mobile-input-overlay"
-      type="text"
+      contenteditable="true"
       inputmode="text"
-      enterkeyhint="done"
+      role="textbox"
+      aria-label="Game Keyboard Input"
       autocomplete="off"
       autocorrect="off"
       autocapitalize="off"
       spellcheck="false"
-    />
+    ></div>
   </div>
 
   <script>
@@ -111,16 +116,25 @@
       BLACK: "#000000"
     };
 
-    const CURRENT_VERSION_TAG = "v4.1 Mobile";
+    const CURRENT_VERSION_TAG = "v4.2 Mobile";
 
     const PATCH_NOTES = [
       {
-        version: "Patch v4.1 — Mobile Keyboard & Viewport Fix",
-        date: "16 Nov 2026 | Hotfix Release",
+        version: "Patch v4.2 — No Autofill Bar & Larger Playfield",
+        date: "16 Nov 2026 | UX & Layout Update",
         is_major: true,
         items: [
+          "- Menghilangkan bilah autofill Chrome (kunci/kartu/lokasi).",
+          "- Panel kontrol ringkas saat keyboard aktif agar area jatuh lebih luas."
+        ]
+      },
+      {
+        version: "Patch v4.1 — Mobile Keyboard & Viewport Fix",
+        date: "16 Nov 2026 | Hotfix Release",
+        is_major: false,
+        items: [
           "- Perbaikan native input overlay agar keyboard HP tetap terbuka.",
-          "- Penyesuaian tinggi otomatis saat keyboard muncul tanpa mengecilkan layar."
+          "- Penyesuaian tinggi otomatis saat keyboard muncul."
         ]
       },
       {
@@ -186,14 +200,6 @@
         is_major: true,
         items: [
           "- Tema visual 8-Bit Super Mario Bros & audio sintetis chiptune."
-        ]
-      },
-      {
-        version: "Patch v0.1 — Initial Prototype",
-        date: "03 Nov 2026 | 19:30 WIB",
-        is_major: false,
-        items: [
-          "- Konsep dasar game mengetik kata jatuh, skor, dan nyawa."
         ]
       }
     ];
@@ -319,9 +325,9 @@
     };
 
     const DIFFICULTY_SETTINGS = {
-      EASY: { speed: 1.05, spawn_rate: 1650, max_active: 4, phrase_every: null, phrase_words_bonus: 0 },
-      MEDIUM: { speed: 1.25, spawn_rate: 1450, max_active: 5, phrase_every: 15, phrase_words_bonus: 10 },
-      HARD: { speed: 1.45, spawn_rate: 1320, max_active: 6, phrase_every: 20, phrase_words_bonus: 15 }
+      EASY: { speed: 1.0, spawn_rate: 1700, max_active: 4, phrase_every: null, phrase_words_bonus: 0 },
+      MEDIUM: { speed: 1.2, spawn_rate: 1500, max_active: 5, phrase_every: 15, phrase_words_bonus: 10 },
+      HARD: { speed: 1.4, spawn_rate: 1350, max_active: 6, phrase_every: 20, phrase_words_bonus: 15 }
     };
 
     const ROAST_LINES = {
@@ -823,6 +829,7 @@
     let activeDangerY = HEIGHT - 155;
     let skillButtons = [];
     let isKeyboardOpen = false;
+    let baselineViewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
 
     const BTN = {
       versionBadge: { x: WIDTH - 195, y: 74, w: 180, h: 28 },
@@ -856,11 +863,11 @@
       retry: { x: 40, y: 550, w: 190, h: 52 },
       menu: { x: 250, y: 550, w: 190, h: 52 },
 
-      tapKeyboard: { x: 14, y: 0, w: 330, h: 44 },
-      tapCancel: { x: 352, y: 0, w: 114, h: 44 }
+      tapKeyboard: { x: 14, y: 0, w: 338, h: 34 },
+      tapCancel: { x: 360, y: 0, w: 106, h: 34 }
     };
 
-    function syncInputOverlayPosition() {
+    function syncOverlayPosition() {
       const rect = canvas.getBoundingClientRect();
       if (rect.width <= 0) return;
       const scale = rect.width / WIDTH;
@@ -889,9 +896,11 @@
       const vv = window.visualViewport;
       const vw = vv ? vv.width : window.innerWidth;
       const vh = vv ? vv.height : window.innerHeight;
-      const fullH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+      if (!isKeyboardOpen && vh > baselineViewportH * 0.9) {
+        baselineViewportH = vh;
+      }
 
-      const scale = Math.min(vw / WIDTH, fullH / HEIGHT);
+      const scale = Math.min(vw / WIDTH, baselineViewportH / HEIGHT);
       canvas.style.width = `${Math.floor(WIDTH * scale)}px`;
       canvas.style.height = `${Math.floor(HEIGHT * scale)}px`;
 
@@ -900,9 +909,9 @@
       const topOffset = rect.top || 0;
       const visiblePx = Math.max(240, vh - topOffset);
       visibleCanvasBottom = Math.min(HEIGHT, Math.floor(visiblePx / currentScale));
-      isKeyboardOpen = vh < fullH * 0.82;
+      isKeyboardOpen = vh < baselineViewportH * 0.82;
 
-      syncInputOverlayPosition();
+      syncOverlayPosition();
     }
 
     window.addEventListener("resize", updateViewportMetrics);
@@ -994,7 +1003,7 @@
           const cand = 24 + Math.random() * (maxX - 24);
           let overlap = false;
           for (const ew of activeWords) {
-            if (ew.y < 195 && Math.abs(cand - ew.x) < Math.max(w, ew.width) + 22) {
+            if (ew.y < 185 && Math.abs(cand - ew.x) < Math.max(w, ew.width) + 22) {
               overlap = true;
               break;
             }
@@ -1014,7 +1023,7 @@
         font,
         width: w,
         x,
-        y: 78
+        y: 74
       });
     }
 
@@ -1038,13 +1047,22 @@
       return others.slice(0, maxTargets);
     }
 
-    function focusMobileKeyboard() {
-      syncInputOverlayPosition();
-      mobileInput.value = " ";
-      mobileInput.focus();
+    function resetEditableBuffer() {
+      mobileInput.textContent = "\u00A0";
       try {
-        mobileInput.setSelectionRange(1, 1);
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(mobileInput);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
       } catch (e) {}
+    }
+
+    function focusMobileKeyboard() {
+      syncOverlayPosition();
+      mobileInput.focus();
+      resetEditableBuffer();
     }
 
     function startGame() {
@@ -1141,8 +1159,8 @@
           f2CdUntil = nowTicks + skillCooldownsMs.F2;
           let pushed = 0;
           for (const w of activeWords) {
-            if (w.y < activeDangerY * 0.55) {
-              w.y = Math.max(78, w.y - 160);
+            if (w.y < activeDangerY * 0.6) {
+              w.y = Math.max(74, w.y - 130);
               pushed++;
             }
           }
@@ -1321,26 +1339,22 @@
     }
 
     mobileInput.addEventListener("input", () => {
-      const val = mobileInput.value;
-      if (val.length === 0) {
+      const raw = mobileInput.textContent.replace(/\u00A0/g, "");
+      if (raw.length === 0 && mobileInput.textContent.length === 0) {
         cancelLockedWord();
       } else {
-        const typed = val.startsWith(" ") ? val.slice(1) : val;
-        for (const ch of typed) {
+        for (const ch of raw) {
           handleCharacterInput(ch);
         }
       }
-      mobileInput.value = " ";
-      try {
-        mobileInput.setSelectionRange(1, 1);
-      } catch (e) {}
+      resetEditableBuffer();
     });
 
     mobileInput.addEventListener("keydown", (e) => {
       if (e.key === "Backspace") {
         e.preventDefault();
         cancelLockedWord();
-        mobileInput.value = " ";
+        resetEditableBuffer();
       } else if (e.key === "Enter") {
         e.preventDefault();
         if (state === "SETUP") {
@@ -1546,7 +1560,7 @@
           state = "MENU";
         }
       }
-      syncInputOverlayPosition();
+      syncOverlayPosition();
     }
 
     canvas.addEventListener("touchend", (e) => {
@@ -1703,7 +1717,7 @@
 
         drawButton(BTN.setupPlay, "PLAY NOW", COLORS.QBLOCK_GOLD, "bold 18px 'Courier New'");
         drawButton(BTN.setupBack, "BACK", COLORS.STONE_GRAY, "bold 16px 'Courier New'");
-        syncInputOverlayPosition();
+        syncOverlayPosition();
       } else if (state === "LEADERBOARD") {
         drawStoneBox(22, 110, WIDTH - 44, 430);
         drawTextOutline("TOP 5 HIGH SCORES", "bold 22px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 134, 2, true);
@@ -1789,8 +1803,8 @@
 
         drawButton(BTN.backBottom, "BACK TO MENU", COLORS.QBLOCK_GOLD);
       } else if (state === "PLAYING" || state === "PAUSED") {
-        const effectiveBottom = Math.max(340, visibleCanvasBottom);
-        const uiStackHeight = gameMode === "TYPERIA" ? 152 : 92;
+        const effectiveBottom = Math.max(330, visibleCanvasBottom);
+        const uiStackHeight = gameMode === "TYPERIA" ? 112 : 68;
         activeDangerY = effectiveBottom - uiStackHeight;
 
         const isSlowed = gameMode === "TYPERIA" && nowTicks < f1SlowUntil;
@@ -1798,14 +1812,14 @@
 
         if (state === "PLAYING") {
           const settings = DIFFICULTY_SETTINGS[difficulty];
-          const speedMult = Math.min(1.35, 1 + score / 7000);
+          const speedMult = Math.min(1.3, 1 + score / 8000);
 
           if (nowTicks >= nextSpawnTime && activeWords.length < settings.max_active) {
             const pInt = settings.phrase_every;
             const spawnPhrase = pInt !== null && wordsCleared >= nextPhraseMilestone && !activeWords.some((w) => w.isPhrase);
             if (spawnPhrase) {
               const pStr = CHALLENGE_PHRASES[language][Math.floor(Math.random() * CHALLENGE_PHRASES[language].length)];
-              spawnWord(pStr, Math.max(0.85, settings.speed * 0.72), true);
+              spawnWord(pStr, Math.max(0.8, settings.speed * 0.72), true);
               nextPhraseMilestone = wordsCleared + pInt + settings.phrase_words_bonus;
               sfxChallenge();
               nextSpawnTime = nowTicks + settings.spawn_rate / speedMult + 4600;
@@ -1819,7 +1833,7 @@
           for (let i = activeWords.length - 1; i >= 0; i--) {
             const w = activeWords[i];
             w.y += w.speed * speedScale;
-            if (w.y + 34 >= activeDangerY) {
+            if (w.y + 32 >= activeDangerY) {
               if (w === lockedWord) {
                 lockedWord = null;
                 mistypedState = false;
@@ -1835,7 +1849,7 @@
 
           if (activeWords.length > 0) {
             const lowestY = Math.max(...activeWords.map((w) => w.y));
-            if (lowestY >= activeDangerY - 85) triggerRoast("danger", nowTicks);
+            if (lowestY >= activeDangerY - 75) triggerRoast("danger", nowTicks);
             else if (nowTicks - lastKeystrokeTicks > 3200) triggerRoast("slow", nowTicks);
           }
 
@@ -1871,7 +1885,7 @@
           const isLocked = w === lockedWord;
           const isTarget = thunderTargets.includes(w);
           const pad = w.isPhrase ? 10 : 9;
-          const bh = w.isPhrase ? 38 : 34;
+          const bh = w.isPhrase ? 36 : 32;
 
           let bg = COLORS.BRICK_ORANGE;
           let shine = COLORS.BRICK_LIGHT;
@@ -1905,7 +1919,7 @@
           drawTextOutline(p.text, "bold 16px 'Courier New'", COLORS.THUNDER_YELLOW, p.x, p.y, 2, true);
         }
 
-        ctx.fillStyle = "rgba(20, 22, 28, 0.92)";
+        ctx.fillStyle = "rgba(20, 22, 28, 0.94)";
         ctx.fillRect(0, activeDangerY, WIDTH, HEIGHT - activeDangerY);
 
         ctx.strokeStyle = COLORS.MARIO_RED;
@@ -1916,22 +1930,22 @@
         ctx.stroke();
 
         const lifeStr = gameMode === "INFINITE" ? "1-UP:♥" : `HP:${"♥".repeat(Math.max(0, lives))}`;
-        drawTextOutline(lifeStr, "bold 16px 'Courier New'", COLORS.MARIO_RED, 16, activeDangerY + 8, 2);
+        drawTextOutline(lifeStr, "bold 15px 'Courier New'", COLORS.MARIO_RED, 14, activeDangerY + 6, 2);
 
         const activeBubble = nowTicks < roastUntil ? roastText : "";
-        drawMrRoasting(WIDTH - 64, activeDangerY - 52, roastMood, activeBubble, nowTicks);
+        drawMrRoasting(WIDTH - 62, activeDangerY - 52, roastMood, activeBubble, nowTicks);
 
-        const barY = activeDangerY + 32;
+        const barY = activeDangerY + 26;
         BTN.tapKeyboard.y = barY;
         BTN.tapCancel.y = barY;
         drawRectBox(BTN.tapKeyboard.x, BTN.tapKeyboard.y, BTN.tapKeyboard.w, BTN.tapKeyboard.h, "#22252e", COLORS.TEXT_CYAN, 2);
         const promptTxt = lockedWord
           ? `TARGET: ${lockedWord.text}`
-          : (isKeyboardOpen ? "KEYBOARD ACTIVE - TYPE NOW!" : "TAP HERE TO OPEN KEYBOARD");
-        drawTextOutline(promptTxt, "bold 13px 'Courier New'", lockedWord ? COLORS.TEXT_GOLD : COLORS.TEXT_CYAN, BTN.tapKeyboard.x + BTN.tapKeyboard.w / 2, barY + 15, 1, true);
-        drawButton(BTN.tapCancel, "CANCEL", COLORS.MARIO_RED, "bold 14px 'Courier New'");
+          : (isKeyboardOpen ? "TYPE NOW!" : "TAP TO OPEN KEYBOARD");
+        drawTextOutline(promptTxt, "bold 13px 'Courier New'", lockedWord ? COLORS.TEXT_GOLD : COLORS.TEXT_CYAN, BTN.tapKeyboard.x + BTN.tapKeyboard.w / 2, barY + 11, 1, true);
+        drawButton(BTN.tapCancel, "CANCEL", COLORS.MARIO_RED, "bold 13px 'Courier New'");
 
-        syncInputOverlayPosition();
+        syncOverlayPosition();
 
         skillButtons = [];
         if (gameMode === "TYPERIA") {
@@ -1941,11 +1955,11 @@
             { key: "F3", label: "THUNDER", unlocked: unlockedSkills.F3, cd: f3CdUntil, col: COLORS.THUNDER_YELLOW, active: f3ThunderActive },
             { key: "F4", label: "ADIOS", unlocked: unlockedSkills.F4, cd: f4CdUntil, col: COLORS.MARIO_RED, active: false }
           ];
-          const sw = 106;
-          const sh = 52;
-          const gap = 8;
+          const sw = 108;
+          const sh = 40;
+          const gap = 6;
           const sx0 = (WIDTH - (sw * 4 + gap * 3)) / 2;
-          const sy = barY + 50;
+          const sy = barY + 40;
 
           skills.forEach((sk, i) => {
             const rect = { x: sx0 + i * (sw + gap), y: sy, w: sw, h: sh };
@@ -1970,20 +1984,20 @@
                 top = COLORS.STONE_GRAY;
               } else {
                 bg = COLORS.PIPE_GREEN;
-                status = `TAP (${skillCooldownsMs[sk.key] / 1000}s)`;
+                status = `${skillCooldownsMs[sk.key] / 1000}s`;
                 sCol = COLORS.TEXT_WHITE;
                 top = COLORS.QBLOCK_SHINE;
               }
             }
 
             drawRectBox(rect.x, rect.y, rect.w, rect.h, bg, COLORS.BLACK, 2, top);
-            drawTextOutline(sk.label, "bold 14px 'Courier New'", sk.unlocked ? COLORS.TEXT_WHITE : COLORS.STONE_LIGHT, rect.x + rect.w / 2, rect.y + 7, 1, true);
-            drawTextOutline(status, "bold 11px 'Courier New'", sCol, rect.x + rect.w / 2, rect.y + 29, sCol === COLORS.BLACK ? 0 : 1, true);
+            drawTextOutline(sk.label, "bold 13px 'Courier New'", sk.unlocked ? COLORS.TEXT_WHITE : COLORS.STONE_LIGHT, rect.x + rect.w / 2, rect.y + 5, 1, true);
+            drawTextOutline(status, "bold 10px 'Courier New'", sCol, rect.x + rect.w / 2, rect.y + 22, sCol === COLORS.BLACK ? 0 : 1, true);
           });
         }
 
         if (nowTicks < skillBannerUntil && skillBannerText) {
-          drawTextOutline(skillBannerText, "bold 16px 'Courier New'", COLORS.THUNDER_YELLOW, WIDTH / 2, 66, 2, true);
+          drawTextOutline(skillBannerText, "bold 16px 'Courier New'", COLORS.THUNDER_YELLOW, WIDTH / 2, 64, 2, true);
         }
 
         if (state === "PAUSED") {
