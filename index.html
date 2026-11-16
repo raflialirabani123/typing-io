@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#5c94fc" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -23,7 +23,7 @@
       overflow: hidden;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
       font-family: "Courier New", Courier, monospace;
     }
     #app-wrapper {
@@ -32,35 +32,51 @@
       height: 100%;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
     }
     canvas {
       display: block;
       image-rendering: pixelated;
       box-shadow: 0 0 24px rgba(0, 0, 0, 0.8);
       background: #5c94fc;
+      touch-action: manipulation;
     }
-    #hidden-input {
+    #mobile-input-overlay {
       position: fixed;
-      top: -100px;
-      left: 0;
-      opacity: 0;
-      width: 1px;
-      height: 1px;
+      left: -9999px;
+      top: 0;
+      opacity: 0.01;
+      color: transparent;
+      background: transparent;
+      border: none;
+      outline: none;
+      caret-color: transparent;
       font-size: 16px;
+      z-index: 20;
+      user-select: text;
+      -webkit-user-select: text;
     }
   </style>
 </head>
 <body>
   <div id="app-wrapper">
     <canvas id="gameCanvas" width="480" height="854"></canvas>
-    <input id="hidden-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+    <input
+      id="mobile-input-overlay"
+      type="text"
+      inputmode="text"
+      enterkeyhint="done"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+    />
   </div>
 
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-    const hiddenInput = document.getElementById("hidden-input");
+    const mobileInput = document.getElementById("mobile-input-overlay");
 
     const WIDTH = 480;
     const HEIGHT = 854;
@@ -95,16 +111,24 @@
       BLACK: "#000000"
     };
 
-    const CURRENT_VERSION_TAG = "v4.0 Mobile";
+    const CURRENT_VERSION_TAG = "v4.1 Mobile";
 
     const PATCH_NOTES = [
+      {
+        version: "Patch v4.1 — Mobile Keyboard & Viewport Fix",
+        date: "16 Nov 2026 | Hotfix Release",
+        is_major: true,
+        items: [
+          "- Perbaikan native input overlay agar keyboard HP tetap terbuka.",
+          "- Penyesuaian tinggi otomatis saat keyboard muncul tanpa mengecilkan layar."
+        ]
+      },
       {
         version: "Patch v4.0 — Mobile Portrait Edition",
         date: "16 Nov 2026 | Mobile Web Release",
         is_major: true,
         items: [
-          "- Perombakan total rasio layar Portrait (480x854) untuk smartphone.",
-          "- Dukungan penuh Virtual Keyboard HP & penyesuaian viewport otomatis.",
+          "- Perombakan rasio layar Portrait (480x854) khusus smartphone.",
           "- Kontrol sentuh (Tap) langsung pada 4 slot skill di mode TYPERIA.",
           "- Penyimpanan High Score & 12 Misi langsung di memori browser HP."
         ]
@@ -795,8 +819,10 @@
     let f3CdUntil = 0;
     let f4CdUntil = 0;
 
+    let visibleCanvasBottom = HEIGHT;
     let activeDangerY = HEIGHT - 155;
     let skillButtons = [];
+    let isKeyboardOpen = false;
 
     const BTN = {
       versionBadge: { x: WIDTH - 195, y: 74, w: 180, h: 28 },
@@ -833,6 +859,69 @@
       tapKeyboard: { x: 14, y: 0, w: 330, h: 44 },
       tapCancel: { x: 352, y: 0, w: 114, h: 44 }
     };
+
+    function syncInputOverlayPosition() {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      const scale = rect.width / WIDTH;
+
+      let targetRect = null;
+      if (state === "PLAYING") {
+        targetRect = BTN.tapKeyboard;
+      } else if (state === "SETUP") {
+        targetRect = BTN.nameBox;
+      }
+
+      if (targetRect && targetRect.y > 0) {
+        mobileInput.style.left = `${rect.left + targetRect.x * scale}px`;
+        mobileInput.style.top = `${rect.top + targetRect.y * scale}px`;
+        mobileInput.style.width = `${targetRect.w * scale}px`;
+        mobileInput.style.height = `${targetRect.h * scale}px`;
+      } else {
+        mobileInput.style.left = "-9999px";
+        mobileInput.style.top = "0px";
+        mobileInput.style.width = "1px";
+        mobileInput.style.height = "1px";
+      }
+    }
+
+    function updateViewportMetrics() {
+      const vv = window.visualViewport;
+      const vw = vv ? vv.width : window.innerWidth;
+      const vh = vv ? vv.height : window.innerHeight;
+      const fullH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+
+      const scale = Math.min(vw / WIDTH, fullH / HEIGHT);
+      canvas.style.width = `${Math.floor(WIDTH * scale)}px`;
+      canvas.style.height = `${Math.floor(HEIGHT * scale)}px`;
+
+      const rect = canvas.getBoundingClientRect();
+      const currentScale = rect.width > 0 ? rect.width / WIDTH : scale;
+      const topOffset = rect.top || 0;
+      const visiblePx = Math.max(240, vh - topOffset);
+      visibleCanvasBottom = Math.min(HEIGHT, Math.floor(visiblePx / currentScale));
+      isKeyboardOpen = vh < fullH * 0.82;
+
+      syncInputOverlayPosition();
+    }
+
+    window.addEventListener("resize", updateViewportMetrics);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", updateViewportMetrics);
+      window.visualViewport.addEventListener("scroll", updateViewportMetrics);
+    }
+    updateViewportMetrics();
+
+    mobileInput.addEventListener("focus", () => {
+      isKeyboardOpen = true;
+      setTimeout(updateViewportMetrics, 60);
+      setTimeout(updateViewportMetrics, 250);
+    });
+
+    mobileInput.addEventListener("blur", () => {
+      isKeyboardOpen = false;
+      setTimeout(updateViewportMetrics, 60);
+    });
 
     function hit(rect, px, py) {
       return px >= rect.x && px <= rect.x + rect.w && py >= rect.y && py <= rect.y + rect.h;
@@ -950,8 +1039,12 @@
     }
 
     function focusMobileKeyboard() {
-      hiddenInput.value = "";
-      hiddenInput.focus();
+      syncInputOverlayPosition();
+      mobileInput.value = " ";
+      mobileInput.focus();
+      try {
+        mobileInput.setSelectionRange(1, 1);
+      } catch (e) {}
     }
 
     function startGame() {
@@ -1000,7 +1093,7 @@
         pauseStartedAt = performance.now();
         state = "PAUSED";
         sfxPause();
-        hiddenInput.blur();
+        mobileInput.blur();
       }
     }
 
@@ -1227,20 +1320,27 @@
       }
     }
 
-    hiddenInput.addEventListener("input", (e) => {
-      const val = hiddenInput.value;
-      if (val && val.length > 0) {
-        for (const ch of val) {
+    mobileInput.addEventListener("input", () => {
+      const val = mobileInput.value;
+      if (val.length === 0) {
+        cancelLockedWord();
+      } else {
+        const typed = val.startsWith(" ") ? val.slice(1) : val;
+        for (const ch of typed) {
           handleCharacterInput(ch);
         }
-        hiddenInput.value = "";
       }
+      mobileInput.value = " ";
+      try {
+        mobileInput.setSelectionRange(1, 1);
+      } catch (e) {}
     });
 
-    hiddenInput.addEventListener("keydown", (e) => {
+    mobileInput.addEventListener("keydown", (e) => {
       if (e.key === "Backspace") {
         e.preventDefault();
         cancelLockedWord();
+        mobileInput.value = " ";
       } else if (e.key === "Enter") {
         e.preventDefault();
         if (state === "SETUP") {
@@ -1251,7 +1351,7 @@
     });
 
     window.addEventListener("keydown", (e) => {
-      if (document.activeElement === hiddenInput) return;
+      if (document.activeElement === mobileInput) return;
       if (e.key === "Escape") {
         if (state === "PLAYING") triggerPause();
         else if (state === "PAUSED") resumeGame();
@@ -1316,9 +1416,9 @@
       }
     }, { passive: true });
 
-    canvas.addEventListener("pointerdown", (e) => {
+    function handleBoardTap(clientX, clientY, ev) {
       ensureAudio();
-      const { x, y } = getCanvasCoords(e.clientX, e.clientY);
+      const { x, y } = getCanvasCoords(clientX, clientY);
       const nowTicks = performance.now();
 
       if (state === "MENU") {
@@ -1380,6 +1480,7 @@
           gameMode = "TYPERIA";
           sfxType();
         } else if (hit(BTN.setupPlay, x, y)) {
+          if (ev) ev.preventDefault();
           sfxCoin();
           startGame();
         } else if (hit(BTN.setupBack, x, y)) {
@@ -1403,9 +1504,11 @@
         }
       } else if (state === "PLAYING") {
         if (hit(BTN.hudPause, x, y)) {
+          if (ev) ev.preventDefault();
           triggerPause();
           return;
         }
+        if (ev) ev.preventDefault();
         if (hit(BTN.tapCancel, x, y)) {
           cancelLockedWord();
           focusMobileKeyboard();
@@ -1422,8 +1525,10 @@
         }
         focusMobileKeyboard();
       } else if (state === "PAUSED") {
-        if (hit(BTN.pauseResume, x, y)) resumeGame();
-        else if (hit(BTN.pauseInfo, x, y)) {
+        if (hit(BTN.pauseResume, x, y)) {
+          if (ev) ev.preventDefault();
+          resumeGame();
+        } else if (hit(BTN.pauseInfo, x, y)) {
           sfxType();
           infoReturn = "PAUSED";
           state = "INFO";
@@ -1433,6 +1538,7 @@
         }
       } else if (state === "GAMEOVER") {
         if (hit(BTN.retry, x, y)) {
+          if (ev) ev.preventDefault();
           sfxCoin();
           startGame();
         } else if (hit(BTN.menu, x, y)) {
@@ -1440,22 +1546,19 @@
           state = "MENU";
         }
       }
+      syncInputOverlayPosition();
+    }
+
+    canvas.addEventListener("touchend", (e) => {
+      if (e.changedTouches && e.changedTouches.length > 0) {
+        const t = e.changedTouches[0];
+        handleBoardTap(t.clientX, t.clientY, e);
+      }
     });
 
-    function resizeCanvas() {
-      const vv = window.visualViewport;
-      const vw = vv ? vv.width : window.innerWidth;
-      const vh = vv ? vv.height : window.innerHeight;
-      const scale = Math.min(vw / WIDTH, vh / HEIGHT);
-      canvas.style.width = `${Math.floor(WIDTH * scale)}px`;
-      canvas.style.height = `${Math.floor(HEIGHT * scale)}px`;
-    }
-
-    window.addEventListener("resize", resizeCanvas);
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", resizeCanvas);
-    }
-    resizeCanvas();
+    canvas.addEventListener("click", (e) => {
+      handleBoardTap(e.clientX, e.clientY, e);
+    });
 
     const totalPatchH = PATCH_NOTES.reduce((acc, p) => acc + 54 + p.items.length * 19 + 12, 0);
     const patchViewH = 515;
@@ -1464,24 +1567,6 @@
     const totalMissionH = MISSIONS_DATA.length * 64 + 12;
     const missionViewH = 490;
     const maxMissionScroll = Math.max(0, totalMissionH - missionViewH);
-
-    function wrapTextLines(text, maxWidth, font) {
-      ctx.font = font;
-      const words = text.split(" ");
-      const lines = [];
-      let line = "";
-      for (const w of words) {
-        const test = line ? `${line} ${w}` : w;
-        if (ctx.measureText(test).width > maxWidth && line) {
-          lines.push(line);
-          line = w;
-        } else {
-          line = test;
-        }
-      }
-      if (line) lines.push(line);
-      return lines;
-    }
 
     function gameLoop(nowTicks) {
       drawBackground();
@@ -1618,6 +1703,7 @@
 
         drawButton(BTN.setupPlay, "PLAY NOW", COLORS.QBLOCK_GOLD, "bold 18px 'Courier New'");
         drawButton(BTN.setupBack, "BACK", COLORS.STONE_GRAY, "bold 16px 'Courier New'");
+        syncInputOverlayPosition();
       } else if (state === "LEADERBOARD") {
         drawStoneBox(22, 110, WIDTH - 44, 430);
         drawTextOutline("TOP 5 HIGH SCORES", "bold 22px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 134, 2, true);
@@ -1703,8 +1789,9 @@
 
         drawButton(BTN.backBottom, "BACK TO MENU", COLORS.QBLOCK_GOLD);
       } else if (state === "PLAYING" || state === "PAUSED") {
-        const bottomReserve = gameMode === "TYPERIA" ? 205 : 140;
-        activeDangerY = HEIGHT - bottomReserve;
+        const effectiveBottom = Math.max(340, visibleCanvasBottom);
+        const uiStackHeight = gameMode === "TYPERIA" ? 152 : 92;
+        activeDangerY = effectiveBottom - uiStackHeight;
 
         const isSlowed = gameMode === "TYPERIA" && nowTicks < f1SlowUntil;
         const speedScale = isSlowed ? 0.3 : 1.0;
@@ -1748,7 +1835,7 @@
 
           if (activeWords.length > 0) {
             const lowestY = Math.max(...activeWords.map((w) => w.y));
-            if (lowestY >= activeDangerY - 95) triggerRoast("danger", nowTicks);
+            if (lowestY >= activeDangerY - 85) triggerRoast("danger", nowTicks);
             else if (nowTicks - lastKeystrokeTicks > 3200) triggerRoast("slow", nowTicks);
           }
 
@@ -1764,7 +1851,7 @@
             if (totalCharsTyped >= 25) recordWpmProgress(finalWpm, nowTicks);
             saveHighscore(playerName || "PLAYER1", score, finalWpm, difficulty, language, gameMode);
             sfxGameOver();
-            hiddenInput.blur();
+            mobileInput.blur();
             state = "GAMEOVER";
           }
         }
@@ -1818,6 +1905,9 @@
           drawTextOutline(p.text, "bold 16px 'Courier New'", COLORS.THUNDER_YELLOW, p.x, p.y, 2, true);
         }
 
+        ctx.fillStyle = "rgba(20, 22, 28, 0.92)";
+        ctx.fillRect(0, activeDangerY, WIDTH, HEIGHT - activeDangerY);
+
         ctx.strokeStyle = COLORS.MARIO_RED;
         ctx.lineWidth = 4;
         ctx.beginPath();
@@ -1826,18 +1916,22 @@
         ctx.stroke();
 
         const lifeStr = gameMode === "INFINITE" ? "1-UP:♥" : `HP:${"♥".repeat(Math.max(0, lives))}`;
-        drawTextOutline(lifeStr, "bold 16px 'Courier New'", COLORS.MARIO_RED, 16, activeDangerY + 10, 2);
+        drawTextOutline(lifeStr, "bold 16px 'Courier New'", COLORS.MARIO_RED, 16, activeDangerY + 8, 2);
 
         const activeBubble = nowTicks < roastUntil ? roastText : "";
         drawMrRoasting(WIDTH - 64, activeDangerY - 52, roastMood, activeBubble, nowTicks);
 
-        const barY = activeDangerY + 34;
+        const barY = activeDangerY + 32;
         BTN.tapKeyboard.y = barY;
         BTN.tapCancel.y = barY;
         drawRectBox(BTN.tapKeyboard.x, BTN.tapKeyboard.y, BTN.tapKeyboard.w, BTN.tapKeyboard.h, "#22252e", COLORS.TEXT_CYAN, 2);
-        const promptTxt = lockedWord ? `TARGET: ${lockedWord.text}` : "TAP HERE TO OPEN KEYBOARD";
-        drawTextOutline(promptTxt, "bold 14px 'Courier New'", lockedWord ? COLORS.TEXT_GOLD : COLORS.TEXT_CYAN, BTN.tapKeyboard.x + BTN.tapKeyboard.w / 2, barY + 15, 1, true);
+        const promptTxt = lockedWord
+          ? `TARGET: ${lockedWord.text}`
+          : (isKeyboardOpen ? "KEYBOARD ACTIVE - TYPE NOW!" : "TAP HERE TO OPEN KEYBOARD");
+        drawTextOutline(promptTxt, "bold 13px 'Courier New'", lockedWord ? COLORS.TEXT_GOLD : COLORS.TEXT_CYAN, BTN.tapKeyboard.x + BTN.tapKeyboard.w / 2, barY + 15, 1, true);
         drawButton(BTN.tapCancel, "CANCEL", COLORS.MARIO_RED, "bold 14px 'Courier New'");
+
+        syncInputOverlayPosition();
 
         skillButtons = [];
         if (gameMode === "TYPERIA") {
@@ -1848,10 +1942,10 @@
             { key: "F4", label: "ADIOS", unlocked: unlockedSkills.F4, cd: f4CdUntil, col: COLORS.MARIO_RED, active: false }
           ];
           const sw = 106;
-          const sh = 54;
+          const sh = 52;
           const gap = 8;
           const sx0 = (WIDTH - (sw * 4 + gap * 3)) / 2;
-          const sy = barY + 52;
+          const sy = barY + 50;
 
           skills.forEach((sk, i) => {
             const rect = { x: sx0 + i * (sw + gap), y: sy, w: sw, h: sh };
@@ -1883,8 +1977,8 @@
             }
 
             drawRectBox(rect.x, rect.y, rect.w, rect.h, bg, COLORS.BLACK, 2, top);
-            drawTextOutline(sk.label, "bold 14px 'Courier New'", sk.unlocked ? COLORS.TEXT_WHITE : COLORS.STONE_LIGHT, rect.x + rect.w / 2, rect.y + 8, 1, true);
-            drawTextOutline(status, "bold 11px 'Courier New'", sCol, rect.x + rect.w / 2, rect.y + 30, sCol === COLORS.BLACK ? 0 : 1, true);
+            drawTextOutline(sk.label, "bold 14px 'Courier New'", sk.unlocked ? COLORS.TEXT_WHITE : COLORS.STONE_LIGHT, rect.x + rect.w / 2, rect.y + 7, 1, true);
+            drawTextOutline(status, "bold 11px 'Courier New'", sCol, rect.x + rect.w / 2, rect.y + 29, sCol === COLORS.BLACK ? 0 : 1, true);
           });
         }
 
