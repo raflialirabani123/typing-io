@@ -18,22 +18,24 @@
       -webkit-tap-highlight-color: transparent;
     }
     html, body {
+      position: fixed;
+      inset: 0;
       width: 100%;
       height: 100%;
       background-color: #18181c;
       overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
       font-family: "Courier New", Courier, monospace;
     }
     #app-wrapper {
-      position: relative;
+      position: fixed;
+      left: 0;
+      top: 0;
       width: 100%;
       height: 100%;
       display: flex;
       justify-content: center;
       align-items: flex-start;
+      overflow: hidden;
     }
     canvas {
       display: block;
@@ -79,12 +81,14 @@
   </div>
 
   <script>
+    const appWrapper = document.getElementById("app-wrapper");
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
     const mobileInput = document.getElementById("mobile-input-overlay");
 
     const WIDTH = 480;
-    const HEIGHT = 854;
+    const BASE_HEIGHT = 854;
+    let dynHeight = BASE_HEIGHT;
 
     const COLORS = {
       SKY_BLUE: "#5c94fc",
@@ -116,16 +120,26 @@
       BLACK: "#000000"
     };
 
-    const CURRENT_VERSION_TAG = "v4.2 Mobile";
+    const CURRENT_VERSION_TAG = "v4.3 Mobile";
 
     const PATCH_NOTES = [
       {
-        version: "Patch v4.2 — No Autofill Bar & Larger Playfield",
-        date: "16 Nov 2026 | UX & Layout Update",
+        version: "Patch v4.3 — Dynamic Full-Scene Fit & Speed Sync",
+        date: "16 Nov 2026 | Viewport & Gameplay Update",
         is_major: true,
         items: [
+          "- Bukit, pipa, tanah bata & HUD utuh terlihat saat keyboard aktif.",
+          "- Mengunci posisi layar agar Chrome tidak menggeser HUD ke atas.",
+          "- Kalibrasi kecepatan jatuh otomatis sesuai tinggi arena bermain."
+        ]
+      },
+      {
+        version: "Patch v4.2 — No Autofill Bar & Larger Playfield",
+        date: "16 Nov 2026 | UX & Layout Update",
+        is_major: false,
+        items: [
           "- Menghilangkan bilah autofill Chrome (kunci/kartu/lokasi).",
-          "- Panel kontrol ringkas saat keyboard aktif agar area jatuh lebih luas."
+          "- Panel kontrol ringkas saat keyboard aktif."
         ]
       },
       {
@@ -133,8 +147,7 @@
         date: "16 Nov 2026 | Hotfix Release",
         is_major: false,
         items: [
-          "- Perbaikan native input overlay agar keyboard HP tetap terbuka.",
-          "- Penyesuaian tinggi otomatis saat keyboard muncul."
+          "- Perbaikan native input overlay agar keyboard HP tetap terbuka."
         ]
       },
       {
@@ -142,7 +155,7 @@
         date: "16 Nov 2026 | Mobile Web Release",
         is_major: true,
         items: [
-          "- Perombakan rasio layar Portrait (480x854) khusus smartphone.",
+          "- Perombakan rasio layar Portrait khusus smartphone.",
           "- Kontrol sentuh (Tap) langsung pada 4 slot skill di mode TYPERIA.",
           "- Penyimpanan High Score & 12 Misi langsung di memori browser HP."
         ]
@@ -192,14 +205,6 @@
         items: [
           "- Bank kata Indonesia, English, dan Python + Top 5 Leaderboard.",
           "- Fitur Smart Recovery & Target Switching saat salah ketik."
-        ]
-      },
-      {
-        version: "Patch v1.1 — 8-Bit NES Visual & Audio",
-        date: "05 Nov 2026 | 21:15 WIB",
-        is_major: true,
-        items: [
-          "- Tema visual 8-Bit Super Mario Bros & audio sintetis chiptune."
         ]
       }
     ];
@@ -325,9 +330,9 @@
     };
 
     const DIFFICULTY_SETTINGS = {
-      EASY: { speed: 1.0, spawn_rate: 1700, max_active: 4, phrase_every: null, phrase_words_bonus: 0 },
-      MEDIUM: { speed: 1.2, spawn_rate: 1500, max_active: 5, phrase_every: 15, phrase_words_bonus: 10 },
-      HARD: { speed: 1.4, spawn_rate: 1350, max_active: 6, phrase_every: 20, phrase_words_bonus: 15 }
+      EASY: { speed: 1.05, spawn_rate: 1750, max_active: 4, phrase_every: null, phrase_words_bonus: 0 },
+      MEDIUM: { speed: 1.25, spawn_rate: 1550, max_active: 5, phrase_every: 15, phrase_words_bonus: 10 },
+      HARD: { speed: 1.45, spawn_rate: 1400, max_active: 6, phrase_every: 20, phrase_words_bonus: 15 }
     };
 
     const ROAST_LINES = {
@@ -568,14 +573,19 @@
     }
 
     function drawBackground() {
+      const h = dynHeight;
       ctx.fillStyle = COLORS.SKY_BLUE;
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
-      const groundY = HEIGHT - 84;
+      ctx.fillRect(0, 0, WIDTH, h);
 
-      function drawHill(cx, baseY, w, h) {
+      const compact = h < 620;
+      const groundH = compact ? 42 : 84;
+      const groundY = h - groundH;
+      const hillScale = compact ? 0.55 : 1.0;
+
+      function drawHill(cx, baseY, w, hillH) {
         ctx.beginPath();
         ctx.moveTo(cx - w / 2, baseY);
-        ctx.lineTo(cx, baseY - h);
+        ctx.lineTo(cx, baseY - hillH);
         ctx.lineTo(cx + w / 2, baseY);
         ctx.closePath();
         ctx.fillStyle = COLORS.HILL_GREEN;
@@ -584,40 +594,44 @@
         ctx.lineWidth = 3;
         ctx.stroke();
         ctx.fillStyle = COLORS.HILL_DARK;
-        ctx.fillRect(cx - 8, baseY - h / 2, 10, 16);
-        ctx.fillRect(cx + 10, baseY - h / 3, 10, 16);
+        ctx.fillRect(cx - 8, baseY - hillH / 2, 10, 14 * hillScale);
+        ctx.fillRect(cx + 10, baseY - hillH / 3, 10, 14 * hillScale);
       }
 
-      drawHill(110, groundY, 210, 140);
-      drawHill(370, groundY, 230, 160);
+      drawHill(110, groundY, 210, Math.round(140 * hillScale));
+      drawHill(370, groundY, 230, Math.round(160 * hillScale));
 
       function drawCloud(x, y) {
-        drawRectBox(x + 22, y, 44, 16, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
-        drawRectBox(x, y + 16, 88, 18, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
+        drawRectBox(x + 22, y, 44, 14, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
+        drawRectBox(x, y + 14, 88, 16, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
       }
 
-      drawCloud(45, 115);
-      drawCloud(315, 145);
+      drawCloud(45, compact ? 74 : 115);
+      drawCloud(315, compact ? 88 : 145);
 
-      drawRectBox(28, 305, 28, 28, COLORS.BRICK_ORANGE, COLORS.BLACK, 2, COLORS.BRICK_LIGHT);
-      drawRectBox(56, 305, 28, 28, COLORS.QBLOCK_GOLD, COLORS.BLACK, 2, COLORS.QBLOCK_SHINE);
-      drawTextOutline("?", "bold 15px 'Courier New'", COLORS.BRICK_DARK, 70, 312, 0, true);
+      const blockY = compact ? Math.round(h * 0.34) : 305;
+      drawRectBox(28, blockY, 26, 26, COLORS.BRICK_ORANGE, COLORS.BLACK, 2, COLORS.BRICK_LIGHT);
+      drawRectBox(54, blockY, 26, 26, COLORS.QBLOCK_GOLD, COLORS.BLACK, 2, COLORS.QBLOCK_SHINE);
+      drawTextOutline("?", "bold 14px 'Courier New'", COLORS.BRICK_DARK, 67, blockY + 6, 0, true);
 
-      const pipeX = 360;
-      const pipeY = groundY - 62;
-      drawRectBox(pipeX + 6, pipeY + 20, 44, 42, COLORS.PIPE_GREEN, COLORS.BLACK, 3);
+      const pipeH = compact ? 38 : 62;
+      const pipeX = 365;
+      const pipeY = groundY - pipeH;
+      drawRectBox(pipeX + 6, pipeY + 14, 42, pipeH - 14, COLORS.PIPE_GREEN, COLORS.BLACK, 3);
       ctx.fillStyle = COLORS.PIPE_LIGHT;
-      ctx.fillRect(pipeX + 11, pipeY + 22, 8, 38);
-      drawRectBox(pipeX, pipeY, 56, 22, COLORS.PIPE_GREEN, COLORS.BLACK, 3);
+      ctx.fillRect(pipeX + 11, pipeY + 16, 8, pipeH - 18);
+      drawRectBox(pipeX, pipeY, 54, 16, COLORS.PIPE_GREEN, COLORS.BLACK, 3);
       ctx.fillStyle = COLORS.PIPE_LIGHT;
-      ctx.fillRect(pipeX + 6, pipeY + 3, 10, 16);
+      ctx.fillRect(pipeX + 6, pipeY + 2, 10, 12);
 
-      const tile = 28;
-      for (let r = 0; r < 3; r++) {
+      const tile = compact ? 21 : 28;
+      const rows = compact ? 2 : 3;
+      for (let r = 0; r < rows; r++) {
         for (let c = 0; c <= Math.ceil(WIDTH / tile); c++) {
           drawRectBox(c * tile, groundY + r * tile, tile, tile, COLORS.BRICK_ORANGE, COLORS.BLACK, 2, COLORS.BRICK_LIGHT);
         }
       }
+      return groundY;
     }
 
     function drawPixelMario(x, y, step) {
@@ -825,11 +839,10 @@
     let f3CdUntil = 0;
     let f4CdUntil = 0;
 
-    let visibleCanvasBottom = HEIGHT;
-    let activeDangerY = HEIGHT - 155;
+    let activeDangerY = BASE_HEIGHT - 155;
     let skillButtons = [];
     let isKeyboardOpen = false;
-    let baselineViewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+    let fullViewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
 
     const BTN = {
       versionBadge: { x: WIDTH - 195, y: 74, w: 180, h: 28 },
@@ -855,9 +868,9 @@
       setupBack: { x: 310, y: 500, w: 135, h: 52 },
 
       hudPause: { x: WIDTH - 95, y: 18, w: 80, h: 36 },
-      pauseResume: { x: 75, y: 310, w: 330, h: 54 },
-      pauseInfo: { x: 75, y: 382, w: 330, h: 54 },
-      pauseExit: { x: 75, y: 454, w: 330, h: 54 },
+      pauseResume: { x: 75, y: 230, w: 330, h: 52 },
+      pauseInfo: { x: 75, y: 298, w: 330, h: 52 },
+      pauseExit: { x: 75, y: 366, w: 330, h: 52 },
 
       backBottom: { x: 90, y: 745, w: 300, h: 50 },
       retry: { x: 40, y: 550, w: 190, h: 52 },
@@ -893,28 +906,43 @@
     }
 
     function updateViewportMetrics() {
+      window.scrollTo(0, 0);
       const vv = window.visualViewport;
       const vw = vv ? vv.width : window.innerWidth;
       const vh = vv ? vv.height : window.innerHeight;
-      if (!isKeyboardOpen && vh > baselineViewportH * 0.9) {
-        baselineViewportH = vh;
+      const vTop = vv ? vv.offsetTop : 0;
+
+      if (!isKeyboardOpen && vh > fullViewportH * 0.9) {
+        fullViewportH = vh;
       }
+      isKeyboardOpen = vh < fullViewportH * 0.82;
 
-      const scale = Math.min(vw / WIDTH, baselineViewportH / HEIGHT);
-      canvas.style.width = `${Math.floor(WIDTH * scale)}px`;
-      canvas.style.height = `${Math.floor(HEIGHT * scale)}px`;
+      appWrapper.style.top = `${vTop}px`;
+      appWrapper.style.height = `${vh}px`;
 
-      const rect = canvas.getBoundingClientRect();
-      const currentScale = rect.width > 0 ? rect.width / WIDTH : scale;
-      const topOffset = rect.top || 0;
-      const visiblePx = Math.max(240, vh - topOffset);
-      visibleCanvasBottom = Math.min(HEIGHT, Math.floor(visiblePx / currentScale));
-      isKeyboardOpen = vh < baselineViewportH * 0.82;
+      const useDynamicFit = state === "PLAYING" || state === "PAUSED";
+      const targetAspectH = useDynamicFit
+        ? Math.max(430, Math.round(WIDTH * (vh / Math.max(vw, 1))))
+        : BASE_HEIGHT;
+
+      const scale = Math.min(vw / WIDTH, vh / targetAspectH);
+      const cssW = Math.floor(WIDTH * scale);
+      const cssH = useDynamicFit ? Math.floor(vh) : Math.floor(BASE_HEIGHT * scale);
+      const nextCanvasH = useDynamicFit ? Math.max(400, Math.round(cssH / Math.max(scale, 0.1))) : BASE_HEIGHT;
+
+      if (canvas.height !== nextCanvasH) {
+        canvas.height = nextCanvasH;
+      }
+      dynHeight = nextCanvasH;
+
+      canvas.style.width = `${cssW}px`;
+      canvas.style.height = `${cssH}px`;
 
       syncOverlayPosition();
     }
 
     window.addEventListener("resize", updateViewportMetrics);
+    window.addEventListener("scroll", () => window.scrollTo(0, 0), { passive: true });
     if (window.visualViewport) {
       window.visualViewport.addEventListener("resize", updateViewportMetrics);
       window.visualViewport.addEventListener("scroll", updateViewportMetrics);
@@ -923,12 +951,14 @@
 
     mobileInput.addEventListener("focus", () => {
       isKeyboardOpen = true;
+      updateViewportMetrics();
       setTimeout(updateViewportMetrics, 60);
       setTimeout(updateViewportMetrics, 250);
     });
 
     mobileInput.addEventListener("blur", () => {
       isKeyboardOpen = false;
+      updateViewportMetrics();
       setTimeout(updateViewportMetrics, 60);
     });
 
@@ -1003,7 +1033,7 @@
           const cand = 24 + Math.random() * (maxX - 24);
           let overlap = false;
           for (const ew of activeWords) {
-            if (ew.y < 185 && Math.abs(cand - ew.x) < Math.max(w, ew.width) + 22) {
+            if (ew.y < 165 && Math.abs(cand - ew.x) < Math.max(w, ew.width) + 22) {
               overlap = true;
               break;
             }
@@ -1023,7 +1053,7 @@
         font,
         width: w,
         x,
-        y: 74
+        y: 68
       });
     }
 
@@ -1071,6 +1101,8 @@
       skillCooldownsMs = res.cooldownsMs;
 
       state = "PLAYING";
+      updateViewportMetrics();
+
       activeWords = [];
       popups = [];
       lockedWord = null;
@@ -1112,6 +1144,7 @@
         state = "PAUSED";
         sfxPause();
         mobileInput.blur();
+        updateViewportMetrics();
       }
     }
 
@@ -1131,6 +1164,7 @@
         if (roastCooldownUntil > 0) roastCooldownUntil += pausedMs;
         state = "PLAYING";
         sfxType();
+        updateViewportMetrics();
         focusMobileKeyboard();
       }
     }
@@ -1159,8 +1193,8 @@
           f2CdUntil = nowTicks + skillCooldownsMs.F2;
           let pushed = 0;
           for (const w of activeWords) {
-            if (w.y < activeDangerY * 0.6) {
-              w.y = Math.max(74, w.y - 130);
+            if (w.y < activeDangerY * 0.65) {
+              w.y = Math.max(68, w.y - 120);
               pushed++;
             }
           }
@@ -1369,8 +1403,8 @@
       if (e.key === "Escape") {
         if (state === "PLAYING") triggerPause();
         else if (state === "PAUSED") resumeGame();
-        else if (["SETUP", "LEADERBOARD", "MISSIONS", "PATCHES"].includes(state)) state = "MENU";
-        else if (state === "INFO") state = infoReturn;
+        else if (["SETUP", "LEADERBOARD", "MISSIONS", "PATCHES"].includes(state)) { state = "MENU"; updateViewportMetrics(); }
+        else if (state === "INFO") { state = infoReturn; updateViewportMetrics(); }
         return;
       }
       if (e.key === "Backspace" || e.key === "Tab") {
@@ -1379,7 +1413,7 @@
         return;
       }
       if (e.key === "Enter") {
-        if (state === "MENU") state = "SETUP";
+        if (state === "MENU") { state = "SETUP"; updateViewportMetrics(); }
         else if (state === "SETUP") { sfxCoin(); startGame(); }
         else if (state === "PAUSED") resumeGame();
         else if (state === "GAMEOVER") startGame();
@@ -1399,7 +1433,7 @@
       const rect = canvas.getBoundingClientRect();
       return {
         x: ((clientX - rect.left) / rect.width) * WIDTH,
-        y: ((clientY - rect.top) / rect.height) * HEIGHT
+        y: ((clientY - rect.top) / rect.height) * dynHeight
       };
     }
 
@@ -1560,7 +1594,7 @@
           state = "MENU";
         }
       }
-      syncOverlayPosition();
+      updateViewportMetrics();
     }
 
     canvas.addEventListener("touchend", (e) => {
@@ -1587,12 +1621,12 @@
 
       if (flashError > 0 && state === "PLAYING") {
         ctx.fillStyle = "rgba(220, 38, 38, 0.35)";
-        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+        ctx.fillRect(0, 0, WIDTH, dynHeight);
         flashError--;
       }
       if (flashSkillTimer > 0 && state === "PLAYING" && flashSkillColor) {
         ctx.fillStyle = flashSkillColor + "44";
-        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+        ctx.fillRect(0, 0, WIDTH, dynHeight);
         flashSkillTimer--;
       }
 
@@ -1637,7 +1671,7 @@
 
         marioX += 1.4;
         if (marioX > 320) marioX = 35;
-        drawPixelMario(Math.floor(marioX), HEIGHT - 117, Math.floor(marioX / 10));
+        drawPixelMario(Math.floor(marioX), BASE_HEIGHT - 117, Math.floor(marioX / 10));
 
         drawTextOutline("TYPING.io", "bold 58px 'Courier New'", COLORS.MARIO_RED, WIDTH / 2, 130, 4, true);
         drawTextOutline("upgrade your typing skill", "bold 18px 'Courier New'", COLORS.TEXT_CYAN, WIDTH / 2, 204, 2, true);
@@ -1650,7 +1684,7 @@
         drawButton(BTN.menuMissions, `MISSIONS (${doneCount}/12)`, COLORS.BOSS_PURPLE, "bold 18px 'Courier New'");
 
         if (Math.floor(nowTicks / 500) % 2 === 0) {
-          drawTextOutline("TAP TO START", "bold 16px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, HEIGHT - 36, 2, true);
+          drawTextOutline("TAP TO START", "bold 16px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, BASE_HEIGHT - 36, 2, true);
         }
       } else if (state === "PATCHES") {
         drawStoneBox(20, 78, WIDTH - 40, 645);
@@ -1803,12 +1837,14 @@
 
         drawButton(BTN.backBottom, "BACK TO MENU", COLORS.QBLOCK_GOLD);
       } else if (state === "PLAYING" || state === "PAUSED") {
-        const effectiveBottom = Math.max(330, visibleCanvasBottom);
         const uiStackHeight = gameMode === "TYPERIA" ? 112 : 68;
-        activeDangerY = effectiveBottom - uiStackHeight;
+        activeDangerY = dynHeight - uiStackHeight;
+
+        const playfieldHeight = Math.max(200, activeDangerY - 68);
+        const speedNorm = Math.max(0.45, Math.min(1.05, playfieldHeight / 620));
 
         const isSlowed = gameMode === "TYPERIA" && nowTicks < f1SlowUntil;
-        const speedScale = isSlowed ? 0.3 : 1.0;
+        const speedScale = (isSlowed ? 0.3 : 1.0) * speedNorm;
 
         if (state === "PLAYING") {
           const settings = DIFFICULTY_SETTINGS[difficulty];
@@ -1849,7 +1885,7 @@
 
           if (activeWords.length > 0) {
             const lowestY = Math.max(...activeWords.map((w) => w.y));
-            if (lowestY >= activeDangerY - 75) triggerRoast("danger", nowTicks);
+            if (lowestY >= activeDangerY - 70) triggerRoast("danger", nowTicks);
             else if (nowTicks - lastKeystrokeTicks > 3200) triggerRoast("slow", nowTicks);
           }
 
@@ -1867,6 +1903,7 @@
             sfxGameOver();
             mobileInput.blur();
             state = "GAMEOVER";
+            updateViewportMetrics();
           }
         }
 
@@ -1920,7 +1957,7 @@
         }
 
         ctx.fillStyle = "rgba(20, 22, 28, 0.94)";
-        ctx.fillRect(0, activeDangerY, WIDTH, HEIGHT - activeDangerY);
+        ctx.fillRect(0, activeDangerY, WIDTH, dynHeight - activeDangerY);
 
         ctx.strokeStyle = COLORS.MARIO_RED;
         ctx.lineWidth = 4;
@@ -2002,9 +2039,9 @@
 
         if (state === "PAUSED") {
           ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
-          ctx.fillRect(0, 0, WIDTH, HEIGHT);
-          drawStoneBox(45, 230, WIDTH - 90, 315);
-          drawTextOutline("GAME PAUSED", "bold 24px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 255, 2, true);
+          ctx.fillRect(0, 0, WIDTH, dynHeight);
+          drawStoneBox(45, 160, WIDTH - 90, 290);
+          drawTextOutline("GAME PAUSED", "bold 24px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 182, 2, true);
           drawButton(BTN.pauseResume, "RESUME", COLORS.PIPE_GREEN);
           drawButton(BTN.pauseInfo, "INFORMATION", COLORS.INFO_BLUE);
           drawButton(BTN.pauseExit, "EXIT TO MENU", COLORS.MARIO_RED);
