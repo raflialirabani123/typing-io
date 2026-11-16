@@ -40,7 +40,7 @@
     canvas {
       display: block;
       image-rendering: pixelated;
-      box-shadow: 0 0 24px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 0 28px rgba(0, 0, 0, 0.85);
       background: #5c94fc;
       touch-action: manipulation;
     }
@@ -66,7 +66,7 @@
 </head>
 <body>
   <div id="app-wrapper">
-    <canvas id="gameCanvas" width="480" height="854"></canvas>
+    <canvas id="gameCanvas" width="540" height="960"></canvas>
     <div
       id="mobile-input-overlay"
       contenteditable="true"
@@ -86,8 +86,8 @@
     const ctx = canvas.getContext("2d");
     const mobileInput = document.getElementById("mobile-input-overlay");
 
-    const WIDTH = 480;
-    const BASE_HEIGHT = 854;
+    const WIDTH = 540;
+    const BASE_HEIGHT = 960;
     let dynHeight = BASE_HEIGHT;
 
     const COLORS = {
@@ -120,91 +120,33 @@
       BLACK: "#000000"
     };
 
-    const CURRENT_VERSION_TAG = "v4.3 Mobile";
+    const CURRENT_VERSION_TAG = "v4.4 Mobile";
 
     const PATCH_NOTES = [
       {
-        version: "Patch v4.3 — Dynamic Full-Scene Fit & Speed Sync",
-        date: "16 Nov 2026 | Viewport & Gameplay Update",
+        version: "Patch v4.4 — Wider Canvas (540px) & Dual Lang",
+        date: "16 Nov 2026 | Layout & Scope Update",
         is_major: true,
         items: [
-          "- Bukit, pipa, tanah bata & HUD utuh terlihat saat keyboard aktif.",
-          "- Mengunci posisi layar agar Chrome tidak menggeser HUD ke atas.",
-          "- Kalibrasi kecepatan jatuh otomatis sesuai tinggi arena bermain."
+          "- Perluasan resolusi internal kanvas menjadi 540x960px.",
+          "- Penghapusan mode Python, kini fokus 2 bahasa (ID & EN).",
+          "- Area jatuh kata lebih lapang dan panjang di atas keyboard."
+        ]
+      },
+      {
+        version: "Patch v4.3 — Dynamic Full-Scene Fit & Speed Sync",
+        date: "16 Nov 2026 | Viewport Update",
+        is_major: false,
+        items: [
+          "- Penyesuaian tampilan penuh agar latar & HUD tidak terpotong."
         ]
       },
       {
         version: "Patch v4.2 — No Autofill Bar & Larger Playfield",
-        date: "16 Nov 2026 | UX & Layout Update",
+        date: "16 Nov 2026 | UX Update",
         is_major: false,
         items: [
-          "- Menghilangkan bilah autofill Chrome (kunci/kartu/lokasi).",
-          "- Panel kontrol ringkas saat keyboard aktif."
-        ]
-      },
-      {
-        version: "Patch v4.1 — Mobile Keyboard & Viewport Fix",
-        date: "16 Nov 2026 | Hotfix Release",
-        is_major: false,
-        items: [
-          "- Perbaikan native input overlay agar keyboard HP tetap terbuka."
-        ]
-      },
-      {
-        version: "Patch v4.0 — Mobile Portrait Edition",
-        date: "16 Nov 2026 | Mobile Web Release",
-        is_major: true,
-        items: [
-          "- Perombakan rasio layar Portrait khusus smartphone.",
-          "- Kontrol sentuh (Tap) langsung pada 4 slot skill di mode TYPERIA.",
-          "- Penyimpanan High Score & 12 Misi langsung di memori browser HP."
-        ]
-      },
-      {
-        version: "Patch v3.1 — Major Update: \"Mr. Roasting\"",
-        date: "16 Nov 2026 | 11:30 WIB",
-        is_major: true,
-        items: [
-          "- Karakter monster piksel 'Mr. Roasting' dengan bubble chat dinamis.",
-          "- Menyindir santai saat typo, kelamaan mikir, atau kena hit.",
-          "- Memuji gengsi saat pemain menjaga combo tinggi & WPM cepat."
-        ]
-      },
-      {
-        version: "Patch v2.2 — Mission & Achievement System",
-        date: "14 Nov 2026 | 23:10 WIB",
-        is_major: false,
-        items: [
-          "- Cooldown dasar Typeria: SLOW (15s), PUSH (20s), THUNDER (30s), ADIOS (60s).",
-          "- Bonus Phrase bernilai +10 kata (Medium) & +15 kata (Hard).",
-          "- 12 Misi Permanen untuk membuka & memangkas cooldown skill."
-        ]
-      },
-      {
-        version: "Patch v2.1 — Mode \"TYPERIA\" & Active Skills",
-        date: "12 Nov 2026 | 21:50 WIB",
-        is_major: true,
-        items: [
-          "- Mode TYPERIA (3 nyawa) dengan 4 skill: SLOW, PUSH, THUNDER, ADIOS.",
-          "- Sambaran petir zig-zag menyambar hingga 3 kata terdekat."
-        ]
-      },
-      {
-        version: "Patch v1.3 — Pause & Information System",
-        date: "10 Nov 2026 | 22:05 WIB",
-        is_major: false,
-        items: [
-          "- Fitur Pause dengan kompensasi durasi jeda agar WPM tetap presisi.",
-          "- Halaman Information berisi panduan bermain & aturan mode."
-        ]
-      },
-      {
-        version: "Patch v1.2 — Multi-Language & Smart Recovery",
-        date: "08 Nov 2026 | 20:40 WIB",
-        is_major: false,
-        items: [
-          "- Bank kata Indonesia, English, dan Python + Top 5 Leaderboard.",
-          "- Fitur Smart Recovery & Target Switching saat salah ketik."
+          "- Menghilangkan bilah autofill Chrome sepenuhnya."
         ]
       }
     ];
@@ -269,36 +211,6 @@
           "troubleshooting", "visualization", "accessibility", "benchmarking",
           "containerization", "orchestration", "observability", "scalability"
         ]
-      },
-      PYTHON: {
-        EASY: [
-          "def", "for", "try", "int", "str", "len", "map", "set", "zip",
-          "pip", "cls", "del", "not", "and", "elif", "else", "pass", "self",
-          "none", "true", "list", "dict", "open", "exit",
-          "abs", "all", "any", "bin", "chr", "dir", "div", "hex",
-          "max", "min", "oct", "ord", "pow", "sum", "bool", "byte",
-          "from", "with", "exec", "eval", "repr", "type", "vars", "iter"
-        ],
-        MEDIUM: [
-          "import", "return", "lambda", "global", "assert", "except",
-          "finally", "yield", "async", "await", "object", "string",
-          "module", "package", "pygame", "pandas", "numpy", "random",
-          "append", "extend", "remove", "sorted", "filter", "format",
-          "importlib", "nonlocal", "continue", "callable", "itertool", "requests",
-          "datetime", "pathlib", "argparse", "unittest", "logging", "secrets",
-          "hashlib", "sqlite", "pickle", "shutil", "tempfile", "platform",
-          "reversed", "property", "complex", "memory", "compile", "getitem"
-        ],
-        HARD: [
-          "isinstance", "issubclass", "enumerate", "staticmethod",
-          "classmethod", "dictionary", "comprehension", "decorator",
-          "generator", "exception", "traceback", "indentation",
-          "recursion", "encapsulation", "polymorphism", "inheritance",
-          "abstractmethod", "contextmanager", "defaultdict", "namedtuple",
-          "ordereddict", "multiprocessing", "asyncio", "dataclasses",
-          "annotations", "metaclass", "serializer", "middleware",
-          "interpreter", "bytecode", "environment", "virtualenv"
-        ]
       }
     };
 
@@ -318,21 +230,13 @@
         "clean code happy code",
         "speed wins the game",
         "level up your skill"
-      ],
-      PYTHON: [
-        "import random sys",
-        "for item in list",
-        "def main return",
-        "try except error",
-        "print hello world",
-        "while running tick"
       ]
     };
 
     const DIFFICULTY_SETTINGS = {
-      EASY: { speed: 1.05, spawn_rate: 1750, max_active: 4, phrase_every: null, phrase_words_bonus: 0 },
-      MEDIUM: { speed: 1.25, spawn_rate: 1550, max_active: 5, phrase_every: 15, phrase_words_bonus: 10 },
-      HARD: { speed: 1.45, spawn_rate: 1400, max_active: 6, phrase_every: 20, phrase_words_bonus: 15 }
+      EASY: { speed: 1.0, spawn_rate: 1800, max_active: 4, phrase_every: null, phrase_words_bonus: 0 },
+      MEDIUM: { speed: 1.2, spawn_rate: 1600, max_active: 5, phrase_every: 15, phrase_words_bonus: 10 },
+      HARD: { speed: 1.4, spawn_rate: 1450, max_active: 6, phrase_every: 20, phrase_words_bonus: 15 }
     };
 
     const ROAST_LINES = {
@@ -437,8 +341,8 @@
     const sfxSkillThunder = () => play8Bit([1175, 880, 1397, 1760], 50, 0.1);
     const sfxSkillAdios = () => play8Bit([523, 659, 784, 1046, 1568], 65, 0.11);
 
-    const LS_SCORES = "typingio_mobile_scores_v1";
-    const LS_PROGRESS = "typingio_mobile_progress_v1";
+    const LS_SCORES = "typingio_mobile_scores_v2";
+    const LS_PROGRESS = "typingio_mobile_progress_v2";
 
     function loadHighscores() {
       try {
@@ -555,7 +459,7 @@
       }
     }
 
-    function drawButton(rect, text, bgColor, font = "bold 17px 'Courier New'") {
+    function drawButton(rect, text, bgColor, font = "bold 18px 'Courier New'") {
       drawRectBox(rect.x, rect.y, rect.w, rect.h, bgColor, COLORS.BLACK, 3, COLORS.QBLOCK_SHINE);
       const fontSize = parseInt(font.match(/\d+/)[0], 10);
       drawTextOutline(text, font, COLORS.TEXT_WHITE, rect.x + rect.w / 2, rect.y + (rect.h - fontSize) / 2, 2, true);
@@ -577,8 +481,8 @@
       ctx.fillStyle = COLORS.SKY_BLUE;
       ctx.fillRect(0, 0, WIDTH, h);
 
-      const compact = h < 620;
-      const groundH = compact ? 42 : 84;
+      const compact = h < 650;
+      const groundH = compact ? 40 : 80;
       const groundY = h - groundH;
       const hillScale = compact ? 0.55 : 1.0;
 
@@ -594,37 +498,37 @@
         ctx.lineWidth = 3;
         ctx.stroke();
         ctx.fillStyle = COLORS.HILL_DARK;
-        ctx.fillRect(cx - 8, baseY - hillH / 2, 10, 14 * hillScale);
-        ctx.fillRect(cx + 10, baseY - hillH / 3, 10, 14 * hillScale);
+        ctx.fillRect(cx - 10, baseY - hillH / 2, 12, 14 * hillScale);
+        ctx.fillRect(cx + 12, baseY - hillH / 3, 12, 14 * hillScale);
       }
 
-      drawHill(110, groundY, 210, Math.round(140 * hillScale));
-      drawHill(370, groundY, 230, Math.round(160 * hillScale));
+      drawHill(130, groundY, 240, Math.round(150 * hillScale));
+      drawHill(410, groundY, 260, Math.round(175 * hillScale));
 
       function drawCloud(x, y) {
-        drawRectBox(x + 22, y, 44, 14, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
-        drawRectBox(x, y + 14, 88, 16, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
+        drawRectBox(x + 24, y, 48, 14, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
+        drawRectBox(x, y + 14, 96, 16, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
       }
 
-      drawCloud(45, compact ? 74 : 115);
-      drawCloud(315, compact ? 88 : 145);
+      drawCloud(55, compact ? 70 : 115);
+      drawCloud(360, compact ? 84 : 145);
 
-      const blockY = compact ? Math.round(h * 0.34) : 305;
-      drawRectBox(28, blockY, 26, 26, COLORS.BRICK_ORANGE, COLORS.BLACK, 2, COLORS.BRICK_LIGHT);
-      drawRectBox(54, blockY, 26, 26, COLORS.QBLOCK_GOLD, COLORS.BLACK, 2, COLORS.QBLOCK_SHINE);
-      drawTextOutline("?", "bold 14px 'Courier New'", COLORS.BRICK_DARK, 67, blockY + 6, 0, true);
+      const blockY = compact ? Math.round(h * 0.32) : 320;
+      drawRectBox(32, blockY, 28, 28, COLORS.BRICK_ORANGE, COLORS.BLACK, 2, COLORS.BRICK_LIGHT);
+      drawRectBox(60, blockY, 28, 28, COLORS.QBLOCK_GOLD, COLORS.BLACK, 2, COLORS.QBLOCK_SHINE);
+      drawTextOutline("?", "bold 15px 'Courier New'", COLORS.BRICK_DARK, 74, blockY + 6, 0, true);
 
-      const pipeH = compact ? 38 : 62;
-      const pipeX = 365;
+      const pipeH = compact ? 36 : 60;
+      const pipeX = 410;
       const pipeY = groundY - pipeH;
-      drawRectBox(pipeX + 6, pipeY + 14, 42, pipeH - 14, COLORS.PIPE_GREEN, COLORS.BLACK, 3);
+      drawRectBox(pipeX + 6, pipeY + 14, 46, pipeH - 14, COLORS.PIPE_GREEN, COLORS.BLACK, 3);
       ctx.fillStyle = COLORS.PIPE_LIGHT;
-      ctx.fillRect(pipeX + 11, pipeY + 16, 8, pipeH - 18);
-      drawRectBox(pipeX, pipeY, 54, 16, COLORS.PIPE_GREEN, COLORS.BLACK, 3);
+      ctx.fillRect(pipeX + 12, pipeY + 16, 8, pipeH - 18);
+      drawRectBox(pipeX, pipeY, 58, 16, COLORS.PIPE_GREEN, COLORS.BLACK, 3);
       ctx.fillStyle = COLORS.PIPE_LIGHT;
       ctx.fillRect(pipeX + 6, pipeY + 2, 10, 12);
 
-      const tile = compact ? 21 : 28;
+      const tile = compact ? 22 : 28;
       const rows = compact ? 2 : 3;
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c <= Math.ceil(WIDTH / tile); c++) {
@@ -669,27 +573,27 @@
       ctx.stroke();
 
       ctx.beginPath();
-      ctx.moveTo(x + 42, my + 8);
-      ctx.lineTo(x + 47, my - 5);
-      ctx.lineTo(x + 33, my + 4);
+      ctx.moveTo(x + 44, my + 8);
+      ctx.lineTo(x + 49, my - 5);
+      ctx.lineTo(x + 35, my + 4);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
 
       const bodyCol = mood === "grudging" ? "#b42d23" : "#228b22";
-      drawRectBox(x + 4, my + 4, 40, 36, bodyCol, COLORS.BLACK, 2);
-      drawRectBox(x + 17, my - 2, 14, 7, COLORS.MARIO_RED, COLORS.BLACK, 2);
+      drawRectBox(x + 4, my + 4, 42, 36, bodyCol, COLORS.BLACK, 2);
+      drawRectBox(x + 18, my - 2, 14, 7, COLORS.MARIO_RED, COLORS.BLACK, 2);
 
-      drawRectBox(x + 9, my + 12, 9, 9, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
-      drawRectBox(x + 30, my + 12, 9, 9, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
+      drawRectBox(x + 9, my + 12, 10, 9, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
+      drawRectBox(x + 31, my + 12, 10, 9, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
 
       ctx.fillStyle = COLORS.BLACK;
       if (mood === "shocked") {
         ctx.fillRect(x + 12, my + 15, 3, 3);
-        ctx.fillRect(x + 33, my + 15, 3, 3);
+        ctx.fillRect(x + 34, my + 15, 3, 3);
       } else {
-        ctx.fillRect(x + 11, my + 15, 3, 4);
-        ctx.fillRect(x + 32, my + 15, 3, 4);
+        ctx.fillRect(x + 12, my + 15, 3, 4);
+        ctx.fillRect(x + 34, my + 15, 3, 4);
       }
 
       ctx.strokeStyle = COLORS.BLACK;
@@ -697,41 +601,41 @@
       ctx.beginPath();
       if (mood === "grudging") {
         ctx.moveTo(x + 8, my + 9);
-        ctx.lineTo(x + 19, my + 13);
-        ctx.moveTo(x + 40, my + 9);
-        ctx.lineTo(x + 29, my + 13);
+        ctx.lineTo(x + 20, my + 13);
+        ctx.moveTo(x + 42, my + 9);
+        ctx.lineTo(x + 30, my + 13);
       } else {
         ctx.moveTo(x + 8, my + 11);
-        ctx.lineTo(x + 19, my + 9);
-        ctx.moveTo(x + 40, my + 11);
-        ctx.lineTo(x + 29, my + 9);
+        ctx.lineTo(x + 20, my + 9);
+        ctx.moveTo(x + 42, my + 11);
+        ctx.lineTo(x + 30, my + 9);
       }
       ctx.stroke();
 
-      drawRectBox(x + 8, my + 24, 32, 14, COLORS.MARIO_SKIN, COLORS.BLACK, 2);
+      drawRectBox(x + 9, my + 24, 32, 14, COLORS.MARIO_SKIN, COLORS.BLACK, 2);
 
       ctx.beginPath();
       if (mood === "smug") {
-        ctx.moveTo(x + 12, my + 32);
-        ctx.lineTo(x + 34, my + 28);
+        ctx.moveTo(x + 13, my + 32);
+        ctx.lineTo(x + 37, my + 28);
         ctx.stroke();
       } else if (mood === "grudging") {
-        ctx.moveTo(x + 12, my + 31);
-        ctx.lineTo(x + 19, my + 29);
-        ctx.lineTo(x + 26, my + 33);
-        ctx.lineTo(x + 34, my + 30);
+        ctx.moveTo(x + 13, my + 31);
+        ctx.lineTo(x + 20, my + 29);
+        ctx.lineTo(x + 28, my + 33);
+        ctx.lineTo(x + 37, my + 30);
         ctx.stroke();
       } else {
         ctx.fillStyle = COLORS.BLACK;
-        ctx.fillRect(x + 19, my + 27, 10, 8);
+        ctx.fillRect(x + 20, my + 27, 10, 8);
       }
 
-      drawTextOutline("MR.ROAST", "bold 11px 'Courier New'", COLORS.TEXT_GOLD, x + 24, my + 42, 1, true);
+      drawTextOutline("MR.ROAST", "bold 11px 'Courier New'", COLORS.TEXT_GOLD, x + 25, my + 42, 1, true);
 
       if (bubbleText) {
         ctx.font = "bold 12px 'Courier New'";
         const tw = ctx.measureText(bubbleText).width;
-        const bw = Math.min(350, tw + 16);
+        const bw = Math.min(380, tw + 16);
         const bh = 26;
         const bx = Math.max(10, x - bw - 10);
         const by = my + 6;
@@ -763,8 +667,8 @@
       for (let i = 1; i < segs; i++) {
         const t = i / segs;
         pts.push([
-          x1 + (x2 - x1) * t + (Math.random() * 26 - 13),
-          y1 + (y2 - y1) * t + (Math.random() * 26 - 13)
+          x1 + (x2 - x1) * t + (Math.random() * 30 - 15),
+          y1 + (y2 - y1) * t + (Math.random() * 30 - 15)
         ]);
       }
       pts.push([x2, y2]);
@@ -823,7 +727,7 @@
     let flashSkillTimer = 0;
     let skillBannerText = "";
     let skillBannerUntil = 0;
-    let marioX = 60;
+    let marioX = 80;
 
     let roastText = "";
     let roastMood = "smug";
@@ -839,45 +743,44 @@
     let f3CdUntil = 0;
     let f4CdUntil = 0;
 
-    let activeDangerY = BASE_HEIGHT - 155;
+    let activeDangerY = BASE_HEIGHT - 135;
     let skillButtons = [];
     let isKeyboardOpen = false;
     let fullViewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
 
     const BTN = {
-      versionBadge: { x: WIDTH - 195, y: 74, w: 180, h: 28 },
-      menuStart: { x: 55, y: 315, w: 370, h: 52 },
-      menuLb: { x: 55, y: 382, w: 370, h: 52 },
-      menuInfo: { x: 55, y: 449, w: 370, h: 52 },
-      menuMissions: { x: 55, y: 516, w: 370, h: 52 },
+      versionBadge: { x: WIDTH - 200, y: 74, w: 185, h: 28 },
+      menuStart: { x: 70, y: 355, w: 400, h: 56 },
+      menuLb: { x: 70, y: 426, w: 400, h: 56 },
+      menuInfo: { x: 70, y: 497, w: 400, h: 56 },
+      menuMissions: { x: 70, y: 568, w: 400, h: 56 },
 
-      nameBox: { x: 45, y: 165, w: 390, h: 42 },
-      easy: { x: 35, y: 245, w: 130, h: 44 },
-      med: { x: 175, y: 245, w: 130, h: 44 },
-      hard: { x: 315, y: 245, w: 130, h: 44 },
+      nameBox: { x: 55, y: 175, w: 430, h: 44 },
+      easy: { x: 55, y: 260, w: 130, h: 46 },
+      med: { x: 205, y: 260, w: 130, h: 46 },
+      hard: { x: 355, y: 260, w: 130, h: 46 },
 
-      langId: { x: 35, y: 332, w: 130, h: 44 },
-      langEn: { x: 175, y: 332, w: 130, h: 44 },
-      langPy: { x: 315, y: 332, w: 130, h: 44 },
+      langId: { x: 95, y: 354, w: 165, h: 46 },
+      langEn: { x: 280, y: 354, w: 165, h: 46 },
 
-      modeClassic: { x: 35, y: 420, w: 130, h: 48 },
-      modeInfinite: { x: 175, y: 420, w: 130, h: 48 },
-      modeTyperia: { x: 315, y: 420, w: 130, h: 48 },
+      modeClassic: { x: 55, y: 450, w: 130, h: 48 },
+      modeInfinite: { x: 205, y: 450, w: 130, h: 48 },
+      modeTyperia: { x: 355, y: 450, w: 130, h: 48 },
 
-      setupPlay: { x: 35, y: 500, w: 265, h: 52 },
-      setupBack: { x: 310, y: 500, w: 135, h: 52 },
+      setupPlay: { x: 55, y: 535, w: 295, h: 54 },
+      setupBack: { x: 365, y: 535, w: 120, h: 54 },
 
-      hudPause: { x: WIDTH - 95, y: 18, w: 80, h: 36 },
-      pauseResume: { x: 75, y: 230, w: 330, h: 52 },
-      pauseInfo: { x: 75, y: 298, w: 330, h: 52 },
-      pauseExit: { x: 75, y: 366, w: 330, h: 52 },
+      hudPause: { x: WIDTH - 105, y: 18, w: 90, h: 36 },
+      pauseResume: { x: 95, y: 260, w: 350, h: 54 },
+      pauseInfo: { x: 95, y: 330, w: 350, h: 54 },
+      pauseExit: { x: 95, y: 400, w: 350, h: 54 },
 
-      backBottom: { x: 90, y: 745, w: 300, h: 50 },
-      retry: { x: 40, y: 550, w: 190, h: 52 },
-      menu: { x: 250, y: 550, w: 190, h: 52 },
+      backBottom: { x: 100, y: 845, w: 340, h: 52 },
+      retry: { x: 50, y: 620, w: 205, h: 54 },
+      menu: { x: 285, y: 620, w: 205, h: 54 },
 
-      tapKeyboard: { x: 14, y: 0, w: 338, h: 34 },
-      tapCancel: { x: 360, y: 0, w: 106, h: 34 }
+      tapKeyboard: { x: 16, y: 0, w: 395, h: 32 },
+      tapCancel: { x: 422, y: 0, w: 102, h: 32 }
     };
 
     function syncOverlayPosition() {
@@ -922,13 +825,13 @@
 
       const useDynamicFit = state === "PLAYING" || state === "PAUSED";
       const targetAspectH = useDynamicFit
-        ? Math.max(430, Math.round(WIDTH * (vh / Math.max(vw, 1))))
+        ? Math.max(450, Math.round(WIDTH * (vh / Math.max(vw, 1))))
         : BASE_HEIGHT;
 
       const scale = Math.min(vw / WIDTH, vh / targetAspectH);
       const cssW = Math.floor(WIDTH * scale);
       const cssH = useDynamicFit ? Math.floor(vh) : Math.floor(BASE_HEIGHT * scale);
-      const nextCanvasH = useDynamicFit ? Math.max(400, Math.round(cssH / Math.max(scale, 0.1))) : BASE_HEIGHT;
+      const nextCanvasH = useDynamicFit ? Math.max(440, Math.round(cssH / Math.max(scale, 0.1))) : BASE_HEIGHT;
 
       if (canvas.height !== nextCanvasH) {
         canvas.height = nextCanvasH;
@@ -1025,15 +928,15 @@
       const font = isPhrase ? "bold 18px 'Courier New'" : "bold 21px 'Courier New'";
       ctx.font = font;
       const w = ctx.measureText(upper).width;
-      const maxX = Math.max(24, WIDTH - w - 24);
-      let x = isPhrase ? (WIDTH - w) / 2 : 24 + Math.random() * (maxX - 24);
+      const maxX = Math.max(28, WIDTH - w - 28);
+      let x = isPhrase ? (WIDTH - w) / 2 : 28 + Math.random() * (maxX - 28);
 
       if (!isPhrase) {
         for (let attempt = 0; attempt < 30; attempt++) {
-          const cand = 24 + Math.random() * (maxX - 24);
+          const cand = 28 + Math.random() * (maxX - 28);
           let overlap = false;
           for (const ew of activeWords) {
-            if (ew.y < 165 && Math.abs(cand - ew.x) < Math.max(w, ew.width) + 22) {
+            if (ew.y < 165 && Math.abs(cand - ew.x) < Math.max(w, ew.width) + 24) {
               overlap = true;
               break;
             }
@@ -1194,7 +1097,7 @@
           let pushed = 0;
           for (const w of activeWords) {
             if (w.y < activeDangerY * 0.65) {
-              w.y = Math.max(68, w.y - 120);
+              w.y = Math.max(68, w.y - 130);
               pushed++;
             }
           }
@@ -1515,9 +1418,6 @@
         } else if (hit(BTN.langEn, x, y)) {
           language = "ENGLISH";
           sfxType();
-        } else if (hit(BTN.langPy, x, y)) {
-          language = "PYTHON";
-          sfxType();
         } else if (hit(BTN.modeClassic, x, y)) {
           gameMode = "CLASSIC";
           sfxType();
@@ -1609,11 +1509,11 @@
     });
 
     const totalPatchH = PATCH_NOTES.reduce((acc, p) => acc + 54 + p.items.length * 19 + 12, 0);
-    const patchViewH = 515;
+    const patchViewH = 580;
     const maxPatchScroll = Math.max(0, totalPatchH - patchViewH);
 
     const totalMissionH = MISSIONS_DATA.length * 64 + 12;
-    const missionViewH = 490;
+    const missionViewH = 560;
     const maxMissionScroll = Math.max(0, totalMissionH - missionViewH);
 
     function gameLoop(nowTicks) {
@@ -1641,56 +1541,56 @@
         : 0;
       const worldNum = difficulty === "EASY" ? "1-1" : difficulty === "MEDIUM" ? "1-2" : "1-3";
 
-      drawTextOutline("SCORE", "bold 16px 'Courier New'", COLORS.TEXT_WHITE, 18, 12, 2);
-      drawTextOutline(String(score).padStart(6, "0"), "bold 18px 'Courier New'", COLORS.TEXT_WHITE, 18, 32, 2);
+      drawTextOutline("SCORE", "bold 16px 'Courier New'", COLORS.TEXT_WHITE, 20, 14, 2);
+      drawTextOutline(String(score).padStart(6, "0"), "bold 18px 'Courier New'", COLORS.TEXT_WHITE, 20, 34, 2);
 
       ctx.fillStyle = COLORS.QBLOCK_GOLD;
       ctx.beginPath();
-      ctx.ellipse(125, 40, 6, 9, 0, 0, Math.PI * 2);
+      ctx.ellipse(145, 43, 6, 9, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = COLORS.BLACK;
       ctx.lineWidth = 2;
       ctx.stroke();
-      drawTextOutline(`x${String(coins).padStart(2, "0")}`, "bold 17px 'Courier New'", COLORS.TEXT_WHITE, 136, 32, 2);
+      drawTextOutline(`x${String(coins).padStart(2, "0")}`, "bold 17px 'Courier New'", COLORS.TEXT_WHITE, 156, 34, 2);
 
-      drawTextOutline("WORLD", "bold 16px 'Courier New'", COLORS.TEXT_WHITE, 215, 12, 2);
-      drawTextOutline(` ${worldNum}`, "bold 17px 'Courier New'", COLORS.TEXT_WHITE, 215, 32, 2);
+      drawTextOutline("WORLD", "bold 16px 'Courier New'", COLORS.TEXT_WHITE, 250, 14, 2);
+      drawTextOutline(` ${worldNum}`, "bold 17px 'Courier New'", COLORS.TEXT_WHITE, 250, 34, 2);
 
       if (state === "PLAYING" || state === "PAUSED" || (state === "INFO" && infoReturn === "PAUSED")) {
-        drawTextOutline(`WPM:${currentWpm}`, "bold 15px 'Courier New'", COLORS.TEXT_GREEN, 295, 12, 2);
-        drawTextOutline(`WRD:${wordsCleared}`, "bold 15px 'Courier New'", COLORS.TEXT_CYAN, 295, 34, 2);
+        drawTextOutline(`WPM:${currentWpm}`, "bold 15px 'Courier New'", COLORS.TEXT_GREEN, 345, 14, 2);
+        drawTextOutline(`WRD:${wordsCleared}`, "bold 15px 'Courier New'", COLORS.TEXT_CYAN, 345, 34, 2);
         drawButton(BTN.hudPause, "PAUSE", COLORS.QBLOCK_GOLD, "bold 14px 'Courier New'");
       } else {
-        drawTextOutline("MODE", "bold 16px 'Courier New'", COLORS.TEXT_WHITE, 385, 12, 2);
-        drawTextOutline(gameMode, "bold 16px 'Courier New'", COLORS.TEXT_GOLD, 385, 32, 2);
+        drawTextOutline("MODE", "bold 16px 'Courier New'", COLORS.TEXT_WHITE, 435, 14, 2);
+        drawTextOutline(gameMode, "bold 16px 'Courier New'", COLORS.TEXT_GOLD, 435, 34, 2);
       }
 
       if (state === "MENU") {
         drawRectBox(BTN.versionBadge.x, BTN.versionBadge.y, BTN.versionBadge.w, BTN.versionBadge.h, COLORS.STONE_DARK, COLORS.TEXT_GOLD, 2);
         drawTextOutline(`${CURRENT_VERSION_TAG} [LOG]`, "bold 12px 'Courier New'", COLORS.TEXT_CYAN, BTN.versionBadge.x + BTN.versionBadge.w / 2, BTN.versionBadge.y + 8, 1, true);
 
-        marioX += 1.4;
-        if (marioX > 320) marioX = 35;
-        drawPixelMario(Math.floor(marioX), BASE_HEIGHT - 117, Math.floor(marioX / 10));
+        marioX += 1.5;
+        if (marioX > 420) marioX = 45;
+        drawPixelMario(Math.floor(marioX), BASE_HEIGHT - 120, Math.floor(marioX / 10));
 
-        drawTextOutline("TYPING.io", "bold 58px 'Courier New'", COLORS.MARIO_RED, WIDTH / 2, 130, 4, true);
-        drawTextOutline("upgrade your typing skill", "bold 18px 'Courier New'", COLORS.TEXT_CYAN, WIDTH / 2, 204, 2, true);
-        drawTextOutline("Made by RAFLI ALI RABANI", "bold 15px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 236, 2, true);
+        drawTextOutline("TYPING.io", "bold 68px 'Courier New'", COLORS.MARIO_RED, WIDTH / 2, 150, 4, true);
+        drawTextOutline("upgrade your typing skill", "bold 20px 'Courier New'", COLORS.TEXT_CYAN, WIDTH / 2, 235, 2, true);
+        drawTextOutline("Made by RAFLI ALI RABANI", "bold 16px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 272, 2, true);
 
         const doneCount = (progress.completed_missions || []).length;
-        drawButton(BTN.menuStart, "START GAME", COLORS.QBLOCK_GOLD, "bold 19px 'Courier New'");
-        drawButton(BTN.menuLb, "LEADERBOARD", COLORS.PIPE_GREEN, "bold 19px 'Courier New'");
-        drawButton(BTN.menuInfo, "INFORMATION", COLORS.INFO_BLUE, "bold 19px 'Courier New'");
-        drawButton(BTN.menuMissions, `MISSIONS (${doneCount}/12)`, COLORS.BOSS_PURPLE, "bold 18px 'Courier New'");
+        drawButton(BTN.menuStart, "START GAME", COLORS.QBLOCK_GOLD, "bold 21px 'Courier New'");
+        drawButton(BTN.menuLb, "LEADERBOARD", COLORS.PIPE_GREEN, "bold 21px 'Courier New'");
+        drawButton(BTN.menuInfo, "INFORMATION", COLORS.INFO_BLUE, "bold 21px 'Courier New'");
+        drawButton(BTN.menuMissions, `MISSIONS (${doneCount}/12)`, COLORS.BOSS_PURPLE, "bold 20px 'Courier New'");
 
         if (Math.floor(nowTicks / 500) % 2 === 0) {
-          drawTextOutline("TAP TO START", "bold 16px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, BASE_HEIGHT - 36, 2, true);
+          drawTextOutline("TAP TO START", "bold 17px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, BASE_HEIGHT - 40, 2, true);
         }
       } else if (state === "PATCHES") {
-        drawStoneBox(20, 78, WIDTH - 40, 645);
-        drawTextOutline("PATCH UPDATE HISTORY", "bold 20px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 95, 2, true);
+        drawStoneBox(25, 78, WIDTH - 50, 745);
+        drawTextOutline("PATCH UPDATE HISTORY", "bold 22px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 98, 2, true);
 
-        const vp = { x: 34, y: 132, w: WIDTH - 78, h: patchViewH };
+        const vp = { x: 40, y: 138, w: WIDTH - 80, h: patchViewH };
         ctx.fillStyle = "#1c1c22";
         ctx.fillRect(vp.x, vp.y, vp.w, vp.h);
         ctx.strokeStyle = COLORS.STONE_GRAY;
@@ -1706,7 +1606,7 @@
         for (const p of PATCH_NOTES) {
           const cardH = 48 + p.items.length * 19;
           drawRectBox(vp.x + 8, cy, vp.w - 16, cardH, p.is_major ? "#342244" : "#262c34", p.is_major ? COLORS.TEXT_GOLD : COLORS.STONE_LIGHT, 2);
-          drawTextOutline(p.version, "bold 12px 'Courier New'", p.is_major ? COLORS.TEXT_GOLD : COLORS.TEXT_GREEN, vp.x + 16, cy + 7, 1);
+          drawTextOutline(p.version, "bold 13px 'Courier New'", p.is_major ? COLORS.TEXT_GOLD : COLORS.TEXT_GREEN, vp.x + 16, cy + 7, 1);
           drawTextOutline(p.date, "bold 11px 'Courier New'", COLORS.TEXT_CYAN, vp.x + 16, cy + 24, 1);
           p.items.forEach((it, idx) => {
             drawTextOutline(it, "bold 11px 'Courier New'", COLORS.TEXT_WHITE, vp.x + 16, cy + 42 + idx * 19, 1);
@@ -1727,49 +1627,48 @@
 
         drawButton(BTN.backBottom, "BACK TO MENU", COLORS.QBLOCK_GOLD);
       } else if (state === "SETUP") {
-        drawStoneBox(22, 85, WIDTH - 44, 505);
-        drawTextOutline("GAME SETUP", "bold 22px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 106, 2, true);
+        drawStoneBox(25, 95, WIDTH - 50, 520);
+        drawTextOutline("GAME SETUP", "bold 24px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 120, 2, true);
 
         const dispName = playerName ? playerName : "PLAYER1";
         drawRectBox(BTN.nameBox.x, BTN.nameBox.y, BTN.nameBox.w, BTN.nameBox.h, COLORS.BRICK_ORANGE, COLORS.BLACK, 2);
-        drawTextOutline(`NAME: ${dispName} (TAP)`, "bold 17px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, BTN.nameBox.y + 12, 2, true);
+        drawTextOutline(`NAME: ${dispName} (TAP)`, "bold 18px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, BTN.nameBox.y + 12, 2, true);
 
-        drawTextOutline("1. SELECT LEVEL", "bold 14px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, 222, 1, true);
-        drawButton(BTN.easy, "EASY", difficulty === "EASY" ? COLORS.PIPE_GREEN : COLORS.STONE_GRAY, "bold 15px 'Courier New'");
-        drawButton(BTN.med, "MEDIUM", difficulty === "MEDIUM" ? COLORS.QBLOCK_GOLD : COLORS.STONE_GRAY, "bold 15px 'Courier New'");
-        drawButton(BTN.hard, "HARD", difficulty === "HARD" ? COLORS.MARIO_RED : COLORS.STONE_GRAY, "bold 15px 'Courier New'");
+        drawTextOutline("1. SELECT LEVEL", "bold 15px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, 234, 1, true);
+        drawButton(BTN.easy, "EASY", difficulty === "EASY" ? COLORS.PIPE_GREEN : COLORS.STONE_GRAY, "bold 16px 'Courier New'");
+        drawButton(BTN.med, "MEDIUM", difficulty === "MEDIUM" ? COLORS.QBLOCK_GOLD : COLORS.STONE_GRAY, "bold 16px 'Courier New'");
+        drawButton(BTN.hard, "HARD", difficulty === "HARD" ? COLORS.MARIO_RED : COLORS.STONE_GRAY, "bold 16px 'Courier New'");
 
-        drawTextOutline("2. WORD LANGUAGE", "bold 14px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, 308, 1, true);
-        drawButton(BTN.langId, "INDONESIA", language === "INDONESIA" ? COLORS.PIPE_GREEN : COLORS.STONE_GRAY, "bold 14px 'Courier New'");
-        drawButton(BTN.langEn, "ENGLISH", language === "ENGLISH" ? COLORS.QBLOCK_GOLD : COLORS.STONE_GRAY, "bold 14px 'Courier New'");
-        drawButton(BTN.langPy, "PYTHON", language === "PYTHON" ? COLORS.INFO_BLUE : COLORS.STONE_GRAY, "bold 14px 'Courier New'");
+        drawTextOutline("2. WORD LANGUAGE (2 OPTIONS)", "bold 15px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, 326, 1, true);
+        drawButton(BTN.langId, "INDONESIA", language === "INDONESIA" ? COLORS.PIPE_GREEN : COLORS.STONE_GRAY, "bold 15px 'Courier New'");
+        drawButton(BTN.langEn, "ENGLISH", language === "ENGLISH" ? COLORS.QBLOCK_GOLD : COLORS.STONE_GRAY, "bold 15px 'Courier New'");
 
-        drawTextOutline("3. GAME MODE", "bold 14px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, 396, 1, true);
-        drawButton(BTN.modeClassic, "CLASSIC (5)", gameMode === "CLASSIC" ? COLORS.PIPE_GREEN : COLORS.STONE_GRAY, "bold 13px 'Courier New'");
-        drawButton(BTN.modeInfinite, "INFINITE (1)", gameMode === "INFINITE" ? COLORS.MARIO_RED : COLORS.STONE_GRAY, "bold 13px 'Courier New'");
-        drawButton(BTN.modeTyperia, "TYPERIA", gameMode === "TYPERIA" ? COLORS.BOSS_PURPLE : COLORS.STONE_GRAY, "bold 14px 'Courier New'");
+        drawTextOutline("3. GAME MODE", "bold 15px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, 420, 1, true);
+        drawButton(BTN.modeClassic, "CLASSIC (5)", gameMode === "CLASSIC" ? COLORS.PIPE_GREEN : COLORS.STONE_GRAY, "bold 14px 'Courier New'");
+        drawButton(BTN.modeInfinite, "INFINITE (1)", gameMode === "INFINITE" ? COLORS.MARIO_RED : COLORS.STONE_GRAY, "bold 14px 'Courier New'");
+        drawButton(BTN.modeTyperia, "TYPERIA", gameMode === "TYPERIA" ? COLORS.BOSS_PURPLE : COLORS.STONE_GRAY, "bold 15px 'Courier New'");
 
-        drawButton(BTN.setupPlay, "PLAY NOW", COLORS.QBLOCK_GOLD, "bold 18px 'Courier New'");
-        drawButton(BTN.setupBack, "BACK", COLORS.STONE_GRAY, "bold 16px 'Courier New'");
+        drawButton(BTN.setupPlay, "PLAY NOW", COLORS.QBLOCK_GOLD, "bold 20px 'Courier New'");
+        drawButton(BTN.setupBack, "BACK", COLORS.STONE_GRAY, "bold 18px 'Courier New'");
         syncOverlayPosition();
       } else if (state === "LEADERBOARD") {
-        drawStoneBox(22, 110, WIDTH - 44, 430);
-        drawTextOutline("TOP 5 HIGH SCORES", "bold 22px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 134, 2, true);
+        drawStoneBox(25, 120, WIDTH - 50, 480);
+        drawTextOutline("TOP 5 HIGH SCORES", "bold 24px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 146, 2, true);
         const scores = loadHighscores();
         if (scores.length === 0) {
-          drawTextOutline("NO RECORDS YET!", "bold 18px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, 300, 2, true);
+          drawTextOutline("NO RECORDS YET!", "bold 19px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, 320, 2, true);
         } else {
           scores.forEach((s, idx) => {
             const line = `${idx + 1}. ${s.name.padEnd(8, " ")} ${String(s.score).padStart(6, "0")} | ${s.wpm}WPM`;
             const sub = `   ${s.difficulty} [${s.lang.slice(0, 3)}/${s.mode.slice(0, 3)}]`;
-            drawTextOutline(line, "bold 16px 'Courier New'", idx === 0 ? COLORS.TEXT_GREEN : COLORS.TEXT_WHITE, 42, 190 + idx * 62, 1);
-            drawTextOutline(sub, "bold 13px 'Courier New'", COLORS.TEXT_CYAN, 42, 212 + idx * 62, 1);
+            drawTextOutline(line, "bold 17px 'Courier New'", idx === 0 ? COLORS.TEXT_GREEN : COLORS.TEXT_WHITE, 50, 205 + idx * 72, 1);
+            drawTextOutline(sub, "bold 14px 'Courier New'", COLORS.TEXT_CYAN, 50, 230 + idx * 72, 1);
           });
         }
         drawButton(BTN.backBottom, "BACK TO MENU", COLORS.QBLOCK_GOLD);
       } else if (state === "INFO") {
-        drawStoneBox(20, 78, WIDTH - 40, 645);
-        drawTextOutline("HOW TO PLAY", "bold 22px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 96, 2, true);
+        drawStoneBox(25, 78, WIDTH - 50, 745);
+        drawTextOutline("HOW TO PLAY", "bold 24px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 98, 2, true);
 
         const infoLines = [
           ["[CARA BERMAIN]", COLORS.TEXT_CYAN],
@@ -1791,18 +1690,18 @@
         ];
 
         infoLines.forEach(([txt, col], i) => {
-          if (txt) drawTextOutline(txt, "bold 13px 'Courier New'", col, 34, 138 + i * 32, 1);
+          if (txt) drawTextOutline(txt, "bold 14px 'Courier New'", col, 40, 148 + i * 35, 1);
         });
 
         drawButton(BTN.backBottom, infoReturn === "PAUSED" ? "BACK TO PAUSE" : "BACK TO MENU", COLORS.QBLOCK_GOLD);
       } else if (state === "MISSIONS") {
-        drawStoneBox(20, 78, WIDTH - 40, 645);
-        drawTextOutline("MISSION & ACHIEVEMENT", "bold 20px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 94, 2, true);
+        drawStoneBox(25, 78, WIDTH - 50, 745);
+        drawTextOutline("MISSION & ACHIEVEMENT", "bold 22px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 98, 2, true);
 
         const statStr = `EASY:${progress.easy_words} | MED:${progress.medium_words} | HARD:${progress.hard_words} | WPM:${progress.best_hard_wpm}`;
-        drawTextOutline(statStr, "bold 12px 'Courier New'", COLORS.TEXT_CYAN, WIDTH / 2, 124, 1, true);
+        drawTextOutline(statStr, "bold 13px 'Courier New'", COLORS.TEXT_CYAN, WIDTH / 2, 132, 1, true);
 
-        const vp = { x: 34, y: 150, w: WIDTH - 78, h: missionViewH };
+        const vp = { x: 40, y: 162, w: WIDTH - 80, h: missionViewH };
         ctx.fillStyle = "#1c1c22";
         ctx.fillRect(vp.x, vp.y, vp.w, vp.h);
 
@@ -1817,10 +1716,10 @@
           const isDone = compSet.has(m.id);
           const curV = progress[m.stat] || 0;
           drawRectBox(vp.x + 8, my, vp.w - 16, 56, isDone ? "#145f23" : "#2a2a30", isDone ? COLORS.TEXT_GREEN : COLORS.STONE_LIGHT, 2);
-          drawTextOutline(m.title, "bold 13px 'Courier New'", COLORS.TEXT_WHITE, vp.x + 16, my + 8, 1);
+          drawTextOutline(m.title, "bold 14px 'Courier New'", COLORS.TEXT_WHITE, vp.x + 16, my + 8, 1);
           const tag = isDone ? "[DONE]" : `[${Math.min(curV, m.target)}/${m.target}]`;
-          drawTextOutline(tag, "bold 12px 'Courier New'", isDone ? COLORS.TEXT_GREEN : COLORS.TEXT_GOLD, vp.x + vp.w - 86, my + 8, 1);
-          drawTextOutline(`Reward: ${m.reward}`, "bold 12px 'Courier New'", isDone ? COLORS.TEXT_GOLD : COLORS.TEXT_CYAN, vp.x + 16, my + 30, 1);
+          drawTextOutline(tag, "bold 13px 'Courier New'", isDone ? COLORS.TEXT_GREEN : COLORS.TEXT_GOLD, vp.x + vp.w - 92, my + 8, 1);
+          drawTextOutline(`Reward: ${m.reward}`, "bold 13px 'Courier New'", isDone ? COLORS.TEXT_GOLD : COLORS.TEXT_CYAN, vp.x + 16, my + 30, 1);
           my += 64;
         }
         ctx.restore();
@@ -1837,18 +1736,18 @@
 
         drawButton(BTN.backBottom, "BACK TO MENU", COLORS.QBLOCK_GOLD);
       } else if (state === "PLAYING" || state === "PAUSED") {
-        const uiStackHeight = gameMode === "TYPERIA" ? 112 : 68;
+        const uiStackHeight = gameMode === "TYPERIA" ? 104 : 64;
         activeDangerY = dynHeight - uiStackHeight;
 
-        const playfieldHeight = Math.max(200, activeDangerY - 68);
-        const speedNorm = Math.max(0.45, Math.min(1.05, playfieldHeight / 620));
+        const playfieldHeight = Math.max(220, activeDangerY - 70);
+        const speedNorm = Math.max(0.45, Math.min(1.05, playfieldHeight / 680));
 
         const isSlowed = gameMode === "TYPERIA" && nowTicks < f1SlowUntil;
         const speedScale = (isSlowed ? 0.3 : 1.0) * speedNorm;
 
         if (state === "PLAYING") {
           const settings = DIFFICULTY_SETTINGS[difficulty];
-          const speedMult = Math.min(1.3, 1 + score / 8000);
+          const speedMult = Math.min(1.3, 1 + score / 8500);
 
           if (nowTicks >= nextSpawnTime && activeWords.length < settings.max_active) {
             const pInt = settings.phrase_every;
@@ -1967,19 +1866,19 @@
         ctx.stroke();
 
         const lifeStr = gameMode === "INFINITE" ? "1-UP:♥" : `HP:${"♥".repeat(Math.max(0, lives))}`;
-        drawTextOutline(lifeStr, "bold 15px 'Courier New'", COLORS.MARIO_RED, 14, activeDangerY + 6, 2);
+        drawTextOutline(lifeStr, "bold 16px 'Courier New'", COLORS.MARIO_RED, 16, activeDangerY + 5, 2);
 
         const activeBubble = nowTicks < roastUntil ? roastText : "";
-        drawMrRoasting(WIDTH - 62, activeDangerY - 52, roastMood, activeBubble, nowTicks);
+        drawMrRoasting(WIDTH - 70, activeDangerY - 52, roastMood, activeBubble, nowTicks);
 
-        const barY = activeDangerY + 26;
+        const barY = activeDangerY + 24;
         BTN.tapKeyboard.y = barY;
         BTN.tapCancel.y = barY;
         drawRectBox(BTN.tapKeyboard.x, BTN.tapKeyboard.y, BTN.tapKeyboard.w, BTN.tapKeyboard.h, "#22252e", COLORS.TEXT_CYAN, 2);
         const promptTxt = lockedWord
           ? `TARGET: ${lockedWord.text}`
           : (isKeyboardOpen ? "TYPE NOW!" : "TAP TO OPEN KEYBOARD");
-        drawTextOutline(promptTxt, "bold 13px 'Courier New'", lockedWord ? COLORS.TEXT_GOLD : COLORS.TEXT_CYAN, BTN.tapKeyboard.x + BTN.tapKeyboard.w / 2, barY + 11, 1, true);
+        drawTextOutline(promptTxt, "bold 13px 'Courier New'", lockedWord ? COLORS.TEXT_GOLD : COLORS.TEXT_CYAN, BTN.tapKeyboard.x + BTN.tapKeyboard.w / 2, barY + 10, 1, true);
         drawButton(BTN.tapCancel, "CANCEL", COLORS.MARIO_RED, "bold 13px 'Courier New'");
 
         syncOverlayPosition();
@@ -1992,11 +1891,11 @@
             { key: "F3", label: "THUNDER", unlocked: unlockedSkills.F3, cd: f3CdUntil, col: COLORS.THUNDER_YELLOW, active: f3ThunderActive },
             { key: "F4", label: "ADIOS", unlocked: unlockedSkills.F4, cd: f4CdUntil, col: COLORS.MARIO_RED, active: false }
           ];
-          const sw = 108;
-          const sh = 40;
+          const sw = 124;
+          const sh = 38;
           const gap = 6;
           const sx0 = (WIDTH - (sw * 4 + gap * 3)) / 2;
-          const sy = barY + 40;
+          const sy = barY + 36;
 
           skills.forEach((sk, i) => {
             const rect = { x: sx0 + i * (sw + gap), y: sy, w: sw, h: sh };
@@ -2028,8 +1927,8 @@
             }
 
             drawRectBox(rect.x, rect.y, rect.w, rect.h, bg, COLORS.BLACK, 2, top);
-            drawTextOutline(sk.label, "bold 13px 'Courier New'", sk.unlocked ? COLORS.TEXT_WHITE : COLORS.STONE_LIGHT, rect.x + rect.w / 2, rect.y + 5, 1, true);
-            drawTextOutline(status, "bold 10px 'Courier New'", sCol, rect.x + rect.w / 2, rect.y + 22, sCol === COLORS.BLACK ? 0 : 1, true);
+            drawTextOutline(sk.label, "bold 13px 'Courier New'", sk.unlocked ? COLORS.TEXT_WHITE : COLORS.STONE_LIGHT, rect.x + rect.w / 2, rect.y + 4, 1, true);
+            drawTextOutline(status, "bold 10px 'Courier New'", sCol, rect.x + rect.w / 2, rect.y + 20, sCol === COLORS.BLACK ? 0 : 1, true);
           });
         }
 
@@ -2040,15 +1939,15 @@
         if (state === "PAUSED") {
           ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
           ctx.fillRect(0, 0, WIDTH, dynHeight);
-          drawStoneBox(45, 160, WIDTH - 90, 290);
-          drawTextOutline("GAME PAUSED", "bold 24px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 182, 2, true);
+          drawStoneBox(55, 180, WIDTH - 110, 310);
+          drawTextOutline("GAME PAUSED", "bold 26px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 205, 2, true);
           drawButton(BTN.pauseResume, "RESUME", COLORS.PIPE_GREEN);
           drawButton(BTN.pauseInfo, "INFORMATION", COLORS.INFO_BLUE);
           drawButton(BTN.pauseExit, "EXIT TO MENU", COLORS.MARIO_RED);
         }
       } else if (state === "GAMEOVER") {
-        drawTextOutline("GAME OVER", "bold 54px 'Courier New'", COLORS.MARIO_RED, WIDTH / 2, 130, 4, true);
-        drawStoneBox(32, 225, WIDTH - 64, 285);
+        drawTextOutline("GAME OVER", "bold 58px 'Courier New'", COLORS.MARIO_RED, WIDTH / 2, 130, 4, true);
+        drawStoneBox(35, 240, WIDTH - 70, 320);
 
         const stats = [
           `PLAYER : ${playerName || "PLAYER1"}`,
@@ -2058,7 +1957,7 @@
           `SPEED  : ${finalWpm} WPM (${finalAccuracy}%)`
         ];
         stats.forEach((st, i) => {
-          drawTextOutline(st, "bold 18px 'Courier New'", i === 3 ? COLORS.TEXT_GOLD : COLORS.TEXT_WHITE, 54, 252 + i * 48, 2);
+          drawTextOutline(st, "bold 19px 'Courier New'", i === 3 ? COLORS.TEXT_GOLD : COLORS.TEXT_WHITE, 60, 270 + i * 52, 2);
         });
 
         drawButton(BTN.retry, "RETRY", COLORS.PIPE_GREEN);
