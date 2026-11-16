@@ -1,0 +1,1929 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
+  <meta name="theme-color" content="#5c94fc" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>TYPING.io - Mobile Edition</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: #18181c;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: "Courier New", Courier, monospace;
+    }
+    #app-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      box-shadow: 0 0 24px rgba(0, 0, 0, 0.8);
+      background: #5c94fc;
+    }
+    #hidden-input {
+      position: fixed;
+      top: -100px;
+      left: 0;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-wrapper">
+    <canvas id="gameCanvas" width="480" height="854"></canvas>
+    <input id="hidden-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const hiddenInput = document.getElementById("hidden-input");
+
+    const WIDTH = 480;
+    const HEIGHT = 854;
+
+    const COLORS = {
+      SKY_BLUE: "#5c94fc",
+      BRICK_ORANGE: "#c84c0c",
+      BRICK_LIGHT: "#fc9838",
+      BRICK_DARK: "#742400",
+      QBLOCK_GOLD: "#fcbc3c",
+      QBLOCK_SHINE: "#ffec96",
+      BOSS_PURPLE: "#9400d3",
+      BOSS_SHINE: "#da70d6",
+      PIPE_GREEN: "#00a800",
+      PIPE_LIGHT: "#80d010",
+      PIPE_DARK: "#005000",
+      HILL_GREEN: "#00a800",
+      HILL_DARK: "#007000",
+      STONE_GRAY: "#747474",
+      STONE_LIGHT: "#bcbcbc",
+      STONE_DARK: "#383838",
+      INFO_BLUE: "#0070ec",
+      ICE_CYAN: "#38dcff",
+      THUNDER_YELLOW: "#fff028",
+      MARIO_RED: "#d82800",
+      MARIO_SKIN: "#fc9838",
+      MARIO_BROWN: "#887000",
+      TEXT_WHITE: "#fcfcfc",
+      TEXT_GOLD: "#fcbc3c",
+      TEXT_GREEN: "#80d010",
+      TEXT_CYAN: "#64f0ff",
+      BLACK: "#000000"
+    };
+
+    const CURRENT_VERSION_TAG = "v4.0 Mobile";
+
+    const PATCH_NOTES = [
+      {
+        version: "Patch v4.0 — Mobile Portrait Edition",
+        date: "16 Nov 2026 | Mobile Web Release",
+        is_major: true,
+        items: [
+          "- Perombakan total rasio layar Portrait (480x854) untuk smartphone.",
+          "- Dukungan penuh Virtual Keyboard HP & penyesuaian viewport otomatis.",
+          "- Kontrol sentuh (Tap) langsung pada 4 slot skill di mode TYPERIA.",
+          "- Penyimpanan High Score & 12 Misi langsung di memori browser HP."
+        ]
+      },
+      {
+        version: "Patch v3.1 — Major Update: \"Mr. Roasting\"",
+        date: "16 Nov 2026 | 11:30 WIB",
+        is_major: true,
+        items: [
+          "- Karakter monster piksel 'Mr. Roasting' dengan bubble chat dinamis.",
+          "- Menyindir santai saat typo, kelamaan mikir, atau kena hit.",
+          "- Memuji gengsi saat pemain menjaga combo tinggi & WPM cepat."
+        ]
+      },
+      {
+        version: "Patch v2.2 — Mission & Achievement System",
+        date: "14 Nov 2026 | 23:10 WIB",
+        is_major: false,
+        items: [
+          "- Cooldown dasar Typeria: SLOW (15s), PUSH (20s), THUNDER (30s), ADIOS (60s).",
+          "- Bonus Phrase bernilai +10 kata (Medium) & +15 kata (Hard).",
+          "- 12 Misi Permanen untuk membuka & memangkas cooldown skill."
+        ]
+      },
+      {
+        version: "Patch v2.1 — Mode \"TYPERIA\" & Active Skills",
+        date: "12 Nov 2026 | 21:50 WIB",
+        is_major: true,
+        items: [
+          "- Mode TYPERIA (3 nyawa) dengan 4 skill: SLOW, PUSH, THUNDER, ADIOS.",
+          "- Sambaran petir zig-zag menyambar hingga 3 kata terdekat."
+        ]
+      },
+      {
+        version: "Patch v1.3 — Pause & Information System",
+        date: "10 Nov 2026 | 22:05 WIB",
+        is_major: false,
+        items: [
+          "- Fitur Pause dengan kompensasi durasi jeda agar WPM tetap presisi.",
+          "- Halaman Information berisi panduan bermain & aturan mode."
+        ]
+      },
+      {
+        version: "Patch v1.2 — Multi-Language & Smart Recovery",
+        date: "08 Nov 2026 | 20:40 WIB",
+        is_major: false,
+        items: [
+          "- Bank kata Indonesia, English, dan Python + Top 5 Leaderboard.",
+          "- Fitur Smart Recovery & Target Switching saat salah ketik."
+        ]
+      },
+      {
+        version: "Patch v1.1 — 8-Bit NES Visual & Audio",
+        date: "05 Nov 2026 | 21:15 WIB",
+        is_major: true,
+        items: [
+          "- Tema visual 8-Bit Super Mario Bros & audio sintetis chiptune."
+        ]
+      },
+      {
+        version: "Patch v0.1 — Initial Prototype",
+        date: "03 Nov 2026 | 19:30 WIB",
+        is_major: false,
+        items: [
+          "- Konsep dasar game mengetik kata jatuh, skor, dan nyawa."
+        ]
+      }
+    ];
+
+    const WORD_BANK = {
+      INDONESIA: {
+        EASY: [
+          "buku", "meja", "kursi", "pintu", "kaca", "air", "api", "batu",
+          "kayu", "daun", "awan", "hujan", "pagi", "malam", "jalan", "rumah",
+          "kota", "desa", "laut", "gunung", "ikan", "burung", "kucing", "bola",
+          "kopi", "roti", "susu", "nasi", "garam", "gula", "madu", "teh",
+          "topi", "baju", "sepatu", "tas", "jam", "kunci", "lampu", "kipas",
+          "bunga", "rumput", "pasir", "ombak", "angin", "bintang", "bulan", "senja"
+        ],
+        MEDIUM: [
+          "komputer", "jaringan", "aplikasi", "program", "internet", "layar",
+          "papan", "tombol", "berkas", "sistem", "data", "pengguna", "sandi",
+          "server", "memori", "proses", "logika", "algoritma", "tampilan",
+          "kecepatan", "ketepatan", "perangkat", "teknologi", "informasi",
+          "kamera", "baterai", "sinyal", "koneksi", "unduhan", "unggahan",
+          "penyimpanan", "peramban", "dokumen", "catatan", "jadwal", "proyek",
+          "kreatif", "inovasi", "strategi", "solusi", "evaluasi", "simulasi",
+          "karakter", "petualang", "tantangan", "prestasi", "peringkat", "latihan"
+        ],
+        HARD: [
+          "pemrograman", "enkapsulasi", "polimorfisme", "infrastruktur",
+          "virtualisasi", "autentikasi", "enkripsi", "optimalisasi",
+          "arsitektur", "konfigurasi", "implementasi", "dokumentasi",
+          "sinkronisasi", "konektivitas", "komputasi", "basisdata",
+          "kecerdasan", "otomatisasi", "transformasi", "visualisasi",
+          "kompatibilitas", "aksesibilitas", "interaktivitas", "produktivitas",
+          "deklarasi", "kompilasi", "eksekusi", "manipulasi",
+          "restrukturisasi", "standardisasi", "verifikasi", "validasi"
+        ]
+      },
+      ENGLISH: {
+        EASY: [
+          "coin", "jump", "pipe", "star", "fire", "code", "data", "fast",
+          "node", "file", "loop", "byte", "disk", "wifi", "link", "user",
+          "port", "host", "ping", "grid", "save", "play", "word", "game",
+          "hero", "boss", "level", "quest", "skill", "score", "time", "wave",
+          "cloud", "stone", "brick", "flag", "dash", "glow", "zoom", "sync",
+          "core", "chip", "wire", "volt", "task", "mode", "rank", "win"
+        ],
+        MEDIUM: [
+          "keyboard", "monitor", "network", "browser", "storage", "digital",
+          "virtual", "machine", "package", "console", "command", "process",
+          "manager", "security", "account", "session", "battery", "adapter",
+          "pointer", "element", "content", "display", "quality", "version",
+          "protocol", "firewall", "gateway", "terminal", "compiler", "runtime",
+          "variable", "function", "database", "platform", "software", "hardware",
+          "graphics", "wireless", "bandwidth", "latency", "response", "progress",
+          "champion", "strategy", "velocity", "accuracy", "practice", "ultimate"
+        ],
+        HARD: [
+          "algorithm", "framework", "interface", "encapsulation",
+          "polymorphism", "inheritance", "asynchronous", "deployment",
+          "virtualization", "authentication", "encryption", "repository",
+          "architecture", "configuration", "optimization", "cybersecurity",
+          "infrastructure", "microservices", "documentation", "compatibility",
+          "serialization", "multithreading", "synchronization", "implementation",
+          "troubleshooting", "visualization", "accessibility", "benchmarking",
+          "containerization", "orchestration", "observability", "scalability"
+        ]
+      },
+      PYTHON: {
+        EASY: [
+          "def", "for", "try", "int", "str", "len", "map", "set", "zip",
+          "pip", "cls", "del", "not", "and", "elif", "else", "pass", "self",
+          "none", "true", "list", "dict", "open", "exit",
+          "abs", "all", "any", "bin", "chr", "dir", "div", "hex",
+          "max", "min", "oct", "ord", "pow", "sum", "bool", "byte",
+          "from", "with", "exec", "eval", "repr", "type", "vars", "iter"
+        ],
+        MEDIUM: [
+          "import", "return", "lambda", "global", "assert", "except",
+          "finally", "yield", "async", "await", "object", "string",
+          "module", "package", "pygame", "pandas", "numpy", "random",
+          "append", "extend", "remove", "sorted", "filter", "format",
+          "importlib", "nonlocal", "continue", "callable", "itertool", "requests",
+          "datetime", "pathlib", "argparse", "unittest", "logging", "secrets",
+          "hashlib", "sqlite", "pickle", "shutil", "tempfile", "platform",
+          "reversed", "property", "complex", "memory", "compile", "getitem"
+        ],
+        HARD: [
+          "isinstance", "issubclass", "enumerate", "staticmethod",
+          "classmethod", "dictionary", "comprehension", "decorator",
+          "generator", "exception", "traceback", "indentation",
+          "recursion", "encapsulation", "polymorphism", "inheritance",
+          "abstractmethod", "contextmanager", "defaultdict", "namedtuple",
+          "ordereddict", "multiprocessing", "asyncio", "dataclasses",
+          "annotations", "metaclass", "serializer", "middleware",
+          "interpreter", "bytecode", "environment", "virtualenv"
+        ]
+      }
+    };
+
+    const CHALLENGE_PHRASES = {
+      INDONESIA: [
+        "saya suka coding",
+        "ketik cepat rapi",
+        "logika itu seru",
+        "terus gas latihan",
+        "fokus dan akurat",
+        "makin jago ngetik"
+      ],
+      ENGLISH: [
+        "code fast stay sharp",
+        "keep calm type on",
+        "practice makes perfect",
+        "clean code happy code",
+        "speed wins the game",
+        "level up your skill"
+      ],
+      PYTHON: [
+        "import random sys",
+        "for item in list",
+        "def main return",
+        "try except error",
+        "print hello world",
+        "while running tick"
+      ]
+    };
+
+    const DIFFICULTY_SETTINGS = {
+      EASY: { speed: 1.05, spawn_rate: 1650, max_active: 4, phrase_every: null, phrase_words_bonus: 0 },
+      MEDIUM: { speed: 1.25, spawn_rate: 1450, max_active: 5, phrase_every: 15, phrase_words_bonus: 10 },
+      HARD: { speed: 1.45, spawn_rate: 1320, max_active: 6, phrase_every: 20, phrase_words_bonus: 15 }
+    };
+
+    const ROAST_LINES = {
+      mistype: [
+        "Typo mulu, jempolnya kepeleset ya?",
+        "Keyboard aman? Kok meleset terus!",
+        "Fokus bestie, hurufnya kabur tuh!",
+        "Waduh salah pencet, butuh kopi nih.",
+        "Salfok mulu, lihat layarnya dong!",
+        "Santai tapi pasti, jangan panik!"
+      ],
+      slow: [
+        "Ngetik apa nungguin paket COD?",
+        "Siput komplek udah nyampe duluan.",
+        "Halo? Layarnya masih disentuh kan?",
+        "Lama banget, lagi ngelamun ya?",
+        "Zzz... bangun yuk, katanya mau jago!"
+      ],
+      danger: [
+        "Udah mepet garis merah, panik gak?",
+        "Waduh numpuk, siap-siap layar merah!",
+        "Gaspol cepetan! Udah di ujung tanduk!",
+        "Gawat, layar penuh! Ketik sat-set!"
+      ],
+      hit: [
+        "Yah lolos satu! Nyawa berkurang deh.",
+        "Makin deket sama Game Over nih.",
+        "Waduh kecolongan! Gitu doang nih?",
+        "Ups, nyawa melayang! Mulai panik ya?"
+      ],
+      praise_grudging: [
+        "Hmph, sat-set juga... jangan geer!",
+        "Cih, combo jalan terus. Hoki aja tuh.",
+        "Oke oke jempolmu cepet, puas?!",
+        "Lumayan rapi sih... dikit doang ya!",
+        "Gak nyangka mulus gitu, kebetulan pasti."
+      ],
+      skill: [
+        "Wah mainnya pake jurus, curang!",
+        "Santai dong, jangan langsung ulti!",
+        "Cih, dikit-dikit tap tombol skill!"
+      ]
+    };
+
+    const MISSIONS_DATA = [
+      { id: 1, title: "Misi 1: 50 Kata di EASY", reward: "Unlock [SLOW] (CD 15s)", stat: "easy_words", target: 50 },
+      { id: 2, title: "Misi 2: 100 Kata di MEDIUM", reward: "Unlock [PUSH] (CD 20s)", stat: "medium_words", target: 100 },
+      { id: 3, title: "Misi 3: 150 Kata di HARD", reward: "Unlock [THUNDER] (CD 30s)", stat: "hard_words", target: 150 },
+      { id: 4, title: "Misi 4: 20 WPM di HARD", reward: "Unlock [ADIOS] (CD 60s)", stat: "best_hard_wpm", target: 20 },
+      { id: 5, title: "Misi 5: 100 Kata di EASY", reward: "CD [SLOW] -3s (12s)", stat: "easy_words", target: 100 },
+      { id: 6, title: "Misi 6: 150 Kata di MEDIUM", reward: "CD [PUSH] -5s (15s)", stat: "medium_words", target: 150 },
+      { id: 7, title: "Misi 7: 200 Kata di HARD", reward: "CD [THUNDER] -5s (25s)", stat: "hard_words", target: 200 },
+      { id: 8, title: "Misi 8: 25 WPM di HARD", reward: "CD [ADIOS] -10s (50s)", stat: "best_hard_wpm", target: 25 },
+      { id: 9, title: "Misi 9: 150 Kata di EASY", reward: "CD [SLOW] -5s (7s)", stat: "easy_words", target: 150 },
+      { id: 10, title: "Misi 10: 200 Kata di MEDIUM", reward: "CD [PUSH] -5s (10s)", stat: "medium_words", target: 200 },
+      { id: 11, title: "Misi 11: 250 Kata di HARD", reward: "CD [THUNDER] -10s (15s)", stat: "hard_words", target: 250 },
+      { id: 12, title: "Misi 12: 30 WPM di HARD", reward: "CD [ADIOS] -20s (30s)", stat: "best_hard_wpm", target: 30 }
+    ];
+
+    let audioCtx = null;
+    function ensureAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+      }
+      if (audioCtx && audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+    }
+
+    function play8Bit(freqs, durationMs = 65, volume = 0.08) {
+      try {
+        ensureAudio();
+        if (!audioCtx) return;
+        let now = audioCtx.currentTime;
+        freqs.forEach((f) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = "square";
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(volume, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + durationMs / 1000);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + durationMs / 1000);
+          now += durationMs / 1000;
+        });
+      } catch (e) {}
+    }
+
+    const sfxType = () => play8Bit([520], 30, 0.06);
+    const sfxCoin = () => play8Bit([988, 1319], 75, 0.09);
+    const sfxChallenge = () => play8Bit([659, 784, 1046], 80, 0.1);
+    const sfxBonusPhrase = () => play8Bit([784, 988, 1175, 1568], 70, 0.11);
+    const sfxError = () => play8Bit([160, 110], 75, 0.1);
+    const sfxPause = () => play8Bit([659, 523], 60, 0.08);
+    const sfxGameOver = () => play8Bit([494, 466, 440, 392, 330], 115, 0.1);
+    const sfxMissionClear = () => play8Bit([523, 659, 784, 1046, 1319], 75, 0.11);
+    const sfxSkillSlow = () => play8Bit([880, 659, 440], 55, 0.09);
+    const sfxSkillPush = () => play8Bit([330, 494, 740], 55, 0.09);
+    const sfxSkillThunder = () => play8Bit([1175, 880, 1397, 1760], 50, 0.1);
+    const sfxSkillAdios = () => play8Bit([523, 659, 784, 1046, 1568], 65, 0.11);
+
+    const LS_SCORES = "typingio_mobile_scores_v1";
+    const LS_PROGRESS = "typingio_mobile_progress_v1";
+
+    function loadHighscores() {
+      try {
+        const raw = localStorage.getItem(LS_SCORES);
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveHighscore(name, score, wpm, difficulty, lang, mode) {
+      const scores = loadHighscores();
+      scores.push({
+        name: name && name.trim() ? name.trim() : "PLAYER1",
+        score,
+        wpm,
+        difficulty,
+        lang,
+        mode
+      });
+      scores.sort((a, b) => b.score - a.score);
+      localStorage.setItem(LS_SCORES, JSON.stringify(scores.slice(0, 5)));
+    }
+
+    function loadProgress() {
+      const def = {
+        easy_words: 0,
+        medium_words: 0,
+        hard_words: 0,
+        best_hard_wpm: 0,
+        completed_missions: []
+      };
+      try {
+        const raw = localStorage.getItem(LS_PROGRESS);
+        if (!raw) return def;
+        return { ...def, ...JSON.parse(raw) };
+      } catch (e) {
+        return def;
+      }
+    }
+
+    function saveProgress(prog) {
+      try {
+        localStorage.setItem(LS_PROGRESS, JSON.stringify(prog));
+      } catch (e) {}
+    }
+
+    function evaluateMissionsAndSkills(prog) {
+      const completed = new Set(prog.completed_missions || []);
+      const newly = [];
+      for (const m of MISSIONS_DATA) {
+        if (!completed.has(m.id) && (prog[m.stat] || 0) >= m.target) {
+          completed.add(m.id);
+          newly.push(m);
+        }
+      }
+      prog.completed_missions = Array.from(completed).sort((a, b) => a - b);
+      if (newly.length > 0) saveProgress(prog);
+
+      const unlocked = {
+        F1: completed.has(1),
+        F2: completed.has(2),
+        F3: completed.has(3),
+        F4: completed.has(4)
+      };
+
+      let cdF1 = 15 - (completed.has(5) ? 3 : 0) - (completed.has(9) ? 5 : 0);
+      let cdF2 = 20 - (completed.has(6) ? 5 : 0) - (completed.has(10) ? 5 : 0);
+      let cdF3 = 30 - (completed.has(7) ? 5 : 0) - (completed.has(11) ? 10 : 0);
+      let cdF4 = 60 - (completed.has(8) ? 10 : 0) - (completed.has(12) ? 20 : 0);
+
+      return {
+        unlocked,
+        cooldownsMs: {
+          F1: Math.max(1, cdF1) * 1000,
+          F2: Math.max(1, cdF2) * 1000,
+          F3: Math.max(1, cdF3) * 1000,
+          F4: Math.max(1, cdF4) * 1000
+        },
+        newly
+      };
+    }
+
+    function drawTextOutline(text, font, color, x, y, thickness = 2, center = false, outlineColor = COLORS.BLACK) {
+      ctx.font = font;
+      ctx.textBaseline = "top";
+      const w = ctx.measureText(text).width;
+      const drawX = center ? x - w / 2 : x;
+      ctx.fillStyle = outlineColor;
+      for (let dx = -thickness; dx <= thickness; dx++) {
+        for (let dy = -thickness; dy <= thickness; dy++) {
+          if (dx !== 0 || dy !== 0) {
+            ctx.fillText(text, drawX + dx, y + dy);
+          }
+        }
+      }
+      ctx.fillStyle = color;
+      ctx.fillText(text, drawX, y);
+      return w;
+    }
+
+    function drawRectBox(x, y, w, h, bg, border = COLORS.BLACK, lineW = 3, topShine = null) {
+      ctx.fillStyle = bg;
+      ctx.fillRect(x, y, w, h);
+      if (topShine) {
+        ctx.fillStyle = topShine;
+        ctx.fillRect(x + 3, y + 3, w - 6, 4);
+      }
+      if (border) {
+        ctx.strokeStyle = border;
+        ctx.lineWidth = lineW;
+        ctx.strokeRect(x, y, w, h);
+      }
+    }
+
+    function drawButton(rect, text, bgColor, font = "bold 17px 'Courier New'") {
+      drawRectBox(rect.x, rect.y, rect.w, rect.h, bgColor, COLORS.BLACK, 3, COLORS.QBLOCK_SHINE);
+      const fontSize = parseInt(font.match(/\d+/)[0], 10);
+      drawTextOutline(text, font, COLORS.TEXT_WHITE, rect.x + rect.w / 2, rect.y + (rect.h - fontSize) / 2, 2, true);
+    }
+
+    function drawStoneBox(x, y, w, h) {
+      ctx.fillStyle = COLORS.STONE_DARK;
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = COLORS.STONE_LIGHT;
+      ctx.lineWidth = 4;
+      ctx.strokeRect(x, y, w, h);
+      ctx.strokeStyle = COLORS.BLACK;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, w, h);
+    }
+
+    function drawBackground() {
+      ctx.fillStyle = COLORS.SKY_BLUE;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      const groundY = HEIGHT - 84;
+
+      function drawHill(cx, baseY, w, h) {
+        ctx.beginPath();
+        ctx.moveTo(cx - w / 2, baseY);
+        ctx.lineTo(cx, baseY - h);
+        ctx.lineTo(cx + w / 2, baseY);
+        ctx.closePath();
+        ctx.fillStyle = COLORS.HILL_GREEN;
+        ctx.fill();
+        ctx.strokeStyle = COLORS.BLACK;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.fillStyle = COLORS.HILL_DARK;
+        ctx.fillRect(cx - 8, baseY - h / 2, 10, 16);
+        ctx.fillRect(cx + 10, baseY - h / 3, 10, 16);
+      }
+
+      drawHill(110, groundY, 210, 140);
+      drawHill(370, groundY, 230, 160);
+
+      function drawCloud(x, y) {
+        drawRectBox(x + 22, y, 44, 16, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
+        drawRectBox(x, y + 16, 88, 18, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
+      }
+
+      drawCloud(45, 115);
+      drawCloud(315, 145);
+
+      drawRectBox(28, 305, 28, 28, COLORS.BRICK_ORANGE, COLORS.BLACK, 2, COLORS.BRICK_LIGHT);
+      drawRectBox(56, 305, 28, 28, COLORS.QBLOCK_GOLD, COLORS.BLACK, 2, COLORS.QBLOCK_SHINE);
+      drawTextOutline("?", "bold 15px 'Courier New'", COLORS.BRICK_DARK, 70, 312, 0, true);
+
+      const pipeX = 360;
+      const pipeY = groundY - 62;
+      drawRectBox(pipeX + 6, pipeY + 20, 44, 42, COLORS.PIPE_GREEN, COLORS.BLACK, 3);
+      ctx.fillStyle = COLORS.PIPE_LIGHT;
+      ctx.fillRect(pipeX + 11, pipeY + 22, 8, 38);
+      drawRectBox(pipeX, pipeY, 56, 22, COLORS.PIPE_GREEN, COLORS.BLACK, 3);
+      ctx.fillStyle = COLORS.PIPE_LIGHT;
+      ctx.fillRect(pipeX + 6, pipeY + 3, 10, 16);
+
+      const tile = 28;
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c <= Math.ceil(WIDTH / tile); c++) {
+          drawRectBox(c * tile, groundY + r * tile, tile, tile, COLORS.BRICK_ORANGE, COLORS.BLACK, 2, COLORS.BRICK_LIGHT);
+        }
+      }
+    }
+
+    function drawPixelMario(x, y, step) {
+      const px = 3;
+      ctx.fillStyle = COLORS.MARIO_RED;
+      ctx.fillRect(x + 2 * px, y, 6 * px, px);
+      ctx.fillRect(x + px, y + px, 9 * px, px);
+      ctx.fillStyle = COLORS.MARIO_BROWN;
+      ctx.fillRect(x + px, y + 2 * px, 3 * px, 2 * px);
+      ctx.fillStyle = COLORS.MARIO_SKIN;
+      ctx.fillRect(x + 4 * px, y + 2 * px, 5 * px, 3 * px);
+      ctx.fillStyle = COLORS.BLACK;
+      ctx.fillRect(x + 6 * px, y + 2 * px, px, px);
+      ctx.fillStyle = COLORS.MARIO_RED;
+      ctx.fillRect(x + px, y + 5 * px, 8 * px, 3 * px);
+      ctx.fillStyle = "#0058f8";
+      ctx.fillRect(x + 3 * px, y + 5 * px, 4 * px, 4 * px);
+      const off = step % 2 === 0 ? px : -px;
+      ctx.fillStyle = COLORS.MARIO_BROWN;
+      ctx.fillRect(x + 2 * px + off, y + 9 * px, 3 * px, 2 * px);
+      ctx.fillRect(x + 6 * px - off, y + 9 * px, 3 * px, 2 * px);
+    }
+
+    function drawMrRoasting(x, y, mood, bubbleText, ticks) {
+      const bob = Math.sin(ticks * 0.008) * 3;
+      const my = y + bob;
+
+      ctx.fillStyle = COLORS.QBLOCK_SHINE;
+      ctx.beginPath();
+      ctx.moveTo(x + 6, my + 8);
+      ctx.lineTo(x + 1, my - 5);
+      ctx.lineTo(x + 15, my + 4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(x + 42, my + 8);
+      ctx.lineTo(x + 47, my - 5);
+      ctx.lineTo(x + 33, my + 4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      const bodyCol = mood === "grudging" ? "#b42d23" : "#228b22";
+      drawRectBox(x + 4, my + 4, 40, 36, bodyCol, COLORS.BLACK, 2);
+      drawRectBox(x + 17, my - 2, 14, 7, COLORS.MARIO_RED, COLORS.BLACK, 2);
+
+      drawRectBox(x + 9, my + 12, 9, 9, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
+      drawRectBox(x + 30, my + 12, 9, 9, COLORS.TEXT_WHITE, COLORS.BLACK, 2);
+
+      ctx.fillStyle = COLORS.BLACK;
+      if (mood === "shocked") {
+        ctx.fillRect(x + 12, my + 15, 3, 3);
+        ctx.fillRect(x + 33, my + 15, 3, 3);
+      } else {
+        ctx.fillRect(x + 11, my + 15, 3, 4);
+        ctx.fillRect(x + 32, my + 15, 3, 4);
+      }
+
+      ctx.strokeStyle = COLORS.BLACK;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      if (mood === "grudging") {
+        ctx.moveTo(x + 8, my + 9);
+        ctx.lineTo(x + 19, my + 13);
+        ctx.moveTo(x + 40, my + 9);
+        ctx.lineTo(x + 29, my + 13);
+      } else {
+        ctx.moveTo(x + 8, my + 11);
+        ctx.lineTo(x + 19, my + 9);
+        ctx.moveTo(x + 40, my + 11);
+        ctx.lineTo(x + 29, my + 9);
+      }
+      ctx.stroke();
+
+      drawRectBox(x + 8, my + 24, 32, 14, COLORS.MARIO_SKIN, COLORS.BLACK, 2);
+
+      ctx.beginPath();
+      if (mood === "smug") {
+        ctx.moveTo(x + 12, my + 32);
+        ctx.lineTo(x + 34, my + 28);
+        ctx.stroke();
+      } else if (mood === "grudging") {
+        ctx.moveTo(x + 12, my + 31);
+        ctx.lineTo(x + 19, my + 29);
+        ctx.lineTo(x + 26, my + 33);
+        ctx.lineTo(x + 34, my + 30);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = COLORS.BLACK;
+        ctx.fillRect(x + 19, my + 27, 10, 8);
+      }
+
+      drawTextOutline("MR.ROAST", "bold 11px 'Courier New'", COLORS.TEXT_GOLD, x + 24, my + 42, 1, true);
+
+      if (bubbleText) {
+        ctx.font = "bold 12px 'Courier New'";
+        const tw = ctx.measureText(bubbleText).width;
+        const bw = Math.min(350, tw + 16);
+        const bh = 26;
+        const bx = Math.max(10, x - bw - 10);
+        const by = my + 6;
+        const bgBubble = mood === "grudging" ? "#fff5d2" : COLORS.TEXT_WHITE;
+        const bdBubble = mood === "grudging" ? COLORS.TEXT_GOLD : COLORS.BLACK;
+
+        drawRectBox(bx, by, bw, bh, bgBubble, bdBubble, 2);
+        ctx.fillStyle = bgBubble;
+        ctx.beginPath();
+        ctx.moveTo(bx + bw, by + 8);
+        ctx.lineTo(bx + bw + 8, by + 13);
+        ctx.lineTo(bx + bw, by + 18);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = bdBubble;
+        ctx.stroke();
+
+        ctx.fillStyle = COLORS.BLACK;
+        ctx.textBaseline = "top";
+        ctx.fillText(bubbleText, bx + 8, by + 7, bw - 16);
+      }
+    }
+
+    function drawLightningArc(p1, p2) {
+      const [x1, y1] = p1;
+      const [x2, y2] = p2;
+      const segs = 6;
+      const pts = [[x1, y1]];
+      for (let i = 1; i < segs; i++) {
+        const t = i / segs;
+        pts.push([
+          x1 + (x2 - x1) * t + (Math.random() * 26 - 13),
+          y1 + (y2 - y1) * t + (Math.random() * 26 - 13)
+        ]);
+      }
+      pts.push([x2, y2]);
+
+      ctx.strokeStyle = COLORS.ICE_CYAN;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+      ctx.stroke();
+
+      ctx.strokeStyle = COLORS.THUNDER_YELLOW;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      ctx.fillStyle = COLORS.THUNDER_YELLOW;
+      ctx.beginPath();
+      ctx.arc(x2, y2, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    let progress = loadProgress();
+    let evalRes = evaluateMissionsAndSkills(progress);
+    let unlockedSkills = evalRes.unlocked;
+    let skillCooldownsMs = evalRes.cooldownsMs;
+
+    let state = "MENU";
+    let infoReturn = "MENU";
+    let patchScrollY = 0;
+    let missionScrollY = 0;
+
+    let difficulty = "MEDIUM";
+    let language = "INDONESIA";
+    let gameMode = "CLASSIC";
+    let playerName = "";
+
+    let activeWords = [];
+    let popups = [];
+    let lockedWord = null;
+    let mistypedState = false;
+    let score = 0;
+    let coins = 0;
+    let wordsCleared = 0;
+    let nextPhraseMilestone = 15;
+    let lives = 5;
+    let combo = 0;
+    let totalCharsTyped = 0;
+    let totalKeystrokes = 0;
+    let startTime = 0;
+    let pauseStartedAt = 0;
+    let nextSpawnTime = 0;
+    let finalWpm = 0;
+    let finalAccuracy = 100;
+    let flashError = 0;
+    let flashSkillColor = null;
+    let flashSkillTimer = 0;
+    let skillBannerText = "";
+    let skillBannerUntil = 0;
+    let marioX = 60;
+
+    let roastText = "";
+    let roastMood = "smug";
+    let roastUntil = 0;
+    let roastCooldownUntil = 0;
+    let roastCategory = "";
+    let lastKeystrokeTicks = 0;
+
+    let f1SlowUntil = 0;
+    let f1CdUntil = 0;
+    let f2CdUntil = 0;
+    let f3ThunderActive = false;
+    let f3CdUntil = 0;
+    let f4CdUntil = 0;
+
+    let activeDangerY = HEIGHT - 155;
+    let skillButtons = [];
+
+    const BTN = {
+      versionBadge: { x: WIDTH - 195, y: 74, w: 180, h: 28 },
+      menuStart: { x: 55, y: 315, w: 370, h: 52 },
+      menuLb: { x: 55, y: 382, w: 370, h: 52 },
+      menuInfo: { x: 55, y: 449, w: 370, h: 52 },
+      menuMissions: { x: 55, y: 516, w: 370, h: 52 },
+
+      nameBox: { x: 45, y: 165, w: 390, h: 42 },
+      easy: { x: 35, y: 245, w: 130, h: 44 },
+      med: { x: 175, y: 245, w: 130, h: 44 },
+      hard: { x: 315, y: 245, w: 130, h: 44 },
+
+      langId: { x: 35, y: 332, w: 130, h: 44 },
+      langEn: { x: 175, y: 332, w: 130, h: 44 },
+      langPy: { x: 315, y: 332, w: 130, h: 44 },
+
+      modeClassic: { x: 35, y: 420, w: 130, h: 48 },
+      modeInfinite: { x: 175, y: 420, w: 130, h: 48 },
+      modeTyperia: { x: 315, y: 420, w: 130, h: 48 },
+
+      setupPlay: { x: 35, y: 500, w: 265, h: 52 },
+      setupBack: { x: 310, y: 500, w: 135, h: 52 },
+
+      hudPause: { x: WIDTH - 95, y: 18, w: 80, h: 36 },
+      pauseResume: { x: 75, y: 310, w: 330, h: 54 },
+      pauseInfo: { x: 75, y: 382, w: 330, h: 54 },
+      pauseExit: { x: 75, y: 454, w: 330, h: 54 },
+
+      backBottom: { x: 90, y: 745, w: 300, h: 50 },
+      retry: { x: 40, y: 550, w: 190, h: 52 },
+      menu: { x: 250, y: 550, w: 190, h: 52 },
+
+      tapKeyboard: { x: 14, y: 0, w: 330, h: 44 },
+      tapCancel: { x: 352, y: 0, w: 114, h: 44 }
+    };
+
+    function hit(rect, px, py) {
+      return px >= rect.x && px <= rect.x + rect.w && py >= rect.y && py <= rect.y + rect.h;
+    }
+
+    function triggerRoast(category, nowTicks, force = false) {
+      if (!force && nowTicks < roastCooldownUntil && category === roastCategory) return;
+      if (!force && nowTicks < roastUntil && category !== "hit" && category !== "skill") return;
+
+      const lines = ROAST_LINES[category] || [];
+      if (lines.length === 0) return;
+      const choices = lines.filter((l) => l !== roastText);
+      const pool = choices.length > 0 ? choices : lines;
+      roastText = pool[Math.floor(Math.random() * pool.length)];
+      roastCategory = category;
+
+      if (category === "praise_grudging") roastMood = "grudging";
+      else if (category === "skill") roastMood = "shocked";
+      else roastMood = "smug";
+
+      roastUntil = nowTicks + 2400;
+      roastCooldownUntil = nowTicks + 3200;
+    }
+
+    function showBanner(text, color, nowTicks, durationMs = 1700) {
+      skillBannerText = text;
+      skillBannerUntil = nowTicks + durationMs;
+      flashSkillColor = color;
+      flashSkillTimer = 7;
+    }
+
+    function recordWordsProgress(amount, nowTicks) {
+      if (amount <= 0) return;
+      const key = `${difficulty.toLowerCase()}_words`;
+      progress[key] = (progress[key] || 0) + amount;
+      saveProgress(progress);
+      const res = evaluateMissionsAndSkills(progress);
+      unlockedSkills = res.unlocked;
+      skillCooldownsMs = res.cooldownsMs;
+      if (res.newly.length > 0) {
+        sfxMissionClear();
+        showBanner(`UNLOCKED: ${res.newly[res.newly.length - 1].reward}`, COLORS.TEXT_GREEN, nowTicks, 2400);
+      }
+    }
+
+    function recordWpmProgress(wpmVal, nowTicks) {
+      if (difficulty === "HARD" && wpmVal > (progress.best_hard_wpm || 0)) {
+        progress.best_hard_wpm = wpmVal;
+        saveProgress(progress);
+        const res = evaluateMissionsAndSkills(progress);
+        unlockedSkills = res.unlocked;
+        skillCooldownsMs = res.cooldownsMs;
+        if (res.newly.length > 0) {
+          sfxMissionClear();
+          showBanner(`UNLOCKED: ${res.newly[res.newly.length - 1].reward}`, COLORS.TEXT_GREEN, nowTicks, 2400);
+        }
+      }
+    }
+
+    function spawnWord(text, speed, isPhrase = false) {
+      const upper = text.toUpperCase();
+      const font = isPhrase ? "bold 18px 'Courier New'" : "bold 21px 'Courier New'";
+      ctx.font = font;
+      const w = ctx.measureText(upper).width;
+      const maxX = Math.max(24, WIDTH - w - 24);
+      let x = isPhrase ? (WIDTH - w) / 2 : 24 + Math.random() * (maxX - 24);
+
+      if (!isPhrase) {
+        for (let attempt = 0; attempt < 30; attempt++) {
+          const cand = 24 + Math.random() * (maxX - 24);
+          let overlap = false;
+          for (const ew of activeWords) {
+            if (ew.y < 195 && Math.abs(cand - ew.x) < Math.max(w, ew.width) + 22) {
+              overlap = true;
+              break;
+            }
+          }
+          if (!overlap) {
+            x = cand;
+            break;
+          }
+        }
+      }
+
+      activeWords.push({
+        text: upper,
+        typed: "",
+        speed,
+        isPhrase,
+        font,
+        width: w,
+        x,
+        y: 78
+      });
+    }
+
+    function pickBalancedWord(list) {
+      const initials = new Set(activeWords.map((w) => w.text[0]));
+      const unique = list.filter((w) => !initials.has(w[0].toUpperCase()));
+      const pool = unique.length > 0 ? unique : list;
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function getThunderTargets(source, maxTargets = 3) {
+      if (!source) return [];
+      const sx = source.x + source.width / 2;
+      const sy = source.y + 14;
+      const others = activeWords.filter((w) => w !== source);
+      others.sort((a, b) => {
+        const da = Math.hypot(a.x + a.width / 2 - sx, a.y + 14 - sy);
+        const db = Math.hypot(b.x + b.width / 2 - sx, b.y + 14 - sy);
+        return da - db;
+      });
+      return others.slice(0, maxTargets);
+    }
+
+    function focusMobileKeyboard() {
+      hiddenInput.value = "";
+      hiddenInput.focus();
+    }
+
+    function startGame() {
+      const res = evaluateMissionsAndSkills(progress);
+      unlockedSkills = res.unlocked;
+      skillCooldownsMs = res.cooldownsMs;
+
+      state = "PLAYING";
+      activeWords = [];
+      popups = [];
+      lockedWord = null;
+      mistypedState = false;
+      score = 0;
+      coins = 0;
+      wordsCleared = 0;
+      const step = DIFFICULTY_SETTINGS[difficulty].phrase_every;
+      nextPhraseMilestone = step ? step : 999999;
+
+      lives = gameMode === "CLASSIC" ? 5 : gameMode === "TYPERIA" ? 3 : 1;
+      combo = 0;
+      totalCharsTyped = 0;
+      totalKeystrokes = 0;
+      startTime = performance.now();
+      const nowT = performance.now();
+      nextSpawnTime = nowT + 300;
+      lastKeystrokeTicks = nowT;
+
+      roastText = "Ayo tunjukin seberapa sat-set jempolmu!";
+      roastMood = "smug";
+      roastUntil = nowT + 2400;
+      roastCooldownUntil = nowT + 3000;
+
+      f1SlowUntil = 0;
+      f1CdUntil = 0;
+      f2CdUntil = 0;
+      f3ThunderActive = false;
+      f3CdUntil = 0;
+      f4CdUntil = 0;
+      skillBannerUntil = 0;
+
+      focusMobileKeyboard();
+    }
+
+    function triggerPause() {
+      if (state === "PLAYING") {
+        pauseStartedAt = performance.now();
+        state = "PAUSED";
+        sfxPause();
+        hiddenInput.blur();
+      }
+    }
+
+    function resumeGame() {
+      if (state === "PAUSED") {
+        const pausedMs = performance.now() - pauseStartedAt;
+        startTime += pausedMs;
+        nextSpawnTime += pausedMs;
+        lastKeystrokeTicks += pausedMs;
+        if (f1SlowUntil > 0) f1SlowUntil += pausedMs;
+        if (f1CdUntil > 0) f1CdUntil += pausedMs;
+        if (f2CdUntil > 0) f2CdUntil += pausedMs;
+        if (f3CdUntil > 0) f3CdUntil += pausedMs;
+        if (f4CdUntil > 0) f4CdUntil += pausedMs;
+        if (skillBannerUntil > 0) skillBannerUntil += pausedMs;
+        if (roastUntil > 0) roastUntil += pausedMs;
+        if (roastCooldownUntil > 0) roastCooldownUntil += pausedMs;
+        state = "PLAYING";
+        sfxType();
+        focusMobileKeyboard();
+      }
+    }
+
+    function activateSkill(fkey, nowTicks) {
+      if (fkey === "F1") {
+        if (!unlockedSkills.F1) {
+          sfxError();
+          showBanner("LOCKED! MISI 1 (50 EASY WORDS)", COLORS.MARIO_RED, nowTicks);
+          return;
+        }
+        if (nowTicks >= f1CdUntil) {
+          f1SlowUntil = nowTicks + 1500;
+          f1CdUntil = nowTicks + skillCooldownsMs.F1;
+          sfxSkillSlow();
+          showBanner("SLOW MOTION (1.5s)!", COLORS.ICE_CYAN, nowTicks);
+          triggerRoast("skill", nowTicks, true);
+        }
+      } else if (fkey === "F2") {
+        if (!unlockedSkills.F2) {
+          sfxError();
+          showBanner("LOCKED! MISI 2 (100 MED WORDS)", COLORS.MARIO_RED, nowTicks);
+          return;
+        }
+        if (nowTicks >= f2CdUntil) {
+          f2CdUntil = nowTicks + skillCooldownsMs.F2;
+          let pushed = 0;
+          for (const w of activeWords) {
+            if (w.y < activeDangerY * 0.55) {
+              w.y = Math.max(78, w.y - 160);
+              pushed++;
+            }
+          }
+          sfxSkillPush();
+          showBanner(`KNOCKBACK (${pushed} WORDS)!`, COLORS.TEXT_GREEN, nowTicks);
+          triggerRoast("skill", nowTicks, true);
+        }
+      } else if (fkey === "F3") {
+        if (!unlockedSkills.F3) {
+          sfxError();
+          showBanner("LOCKED! MISI 3 (150 HARD WORDS)", COLORS.MARIO_RED, nowTicks);
+          return;
+        }
+        if (nowTicks >= f3CdUntil && !f3ThunderActive) {
+          f3ThunderActive = true;
+          f3CdUntil = nowTicks + skillCooldownsMs.F3;
+          sfxSkillThunder();
+          showBanner("THUNDER READY! TYPE A WORD!", COLORS.THUNDER_YELLOW, nowTicks);
+          triggerRoast("skill", nowTicks, true);
+        }
+      } else if (fkey === "F4") {
+        if (!unlockedSkills.F4) {
+          sfxError();
+          showBanner("LOCKED! MISI 4 (20 WPM HARD)", COLORS.MARIO_RED, nowTicks);
+          return;
+        }
+        if (nowTicks >= f4CdUntil) {
+          f4CdUntil = nowTicks + skillCooldownsMs.F4;
+          const count = activeWords.length;
+          if (count > 0) {
+            score += count * 100;
+            coins += count;
+            wordsCleared += count;
+            recordWordsProgress(count, nowTicks);
+          }
+          activeWords = [];
+          lockedWord = null;
+          mistypedState = false;
+          sfxSkillAdios();
+          showBanner(`ADIOS! (${count} WORDS WIPED!)`, COLORS.TEXT_WHITE, nowTicks);
+          triggerRoast("skill", nowTicks, true);
+        }
+      }
+    }
+
+    function handleCharacterInput(rawChar) {
+      const nowTicks = performance.now();
+      if (state === "SETUP") {
+        if (/[a-zA-Z0-9]/.test(rawChar) && playerName.length < 10) {
+          playerName += rawChar.toUpperCase();
+          sfxType();
+        }
+        return;
+      }
+      if (state !== "PLAYING") return;
+      if (!/[a-zA-Z ]/.test(rawChar)) return;
+
+      const char = rawChar.toUpperCase();
+      totalKeystrokes++;
+      lastKeystrokeTicks = nowTicks;
+
+      if (!lockedWord) {
+        if (char !== " ") {
+          const cands = activeWords.filter((w) => w.text.startsWith(char));
+          if (cands.length > 0) {
+            lockedWord = cands.reduce((a, b) => (a.y > b.y ? a : b));
+            lockedWord.typed += char;
+            totalCharsTyped++;
+            mistypedState = false;
+            sfxType();
+          } else {
+            combo = 0;
+            flashError = 5;
+            sfxError();
+            triggerRoast("mistype", nowTicks);
+          }
+        }
+      } else {
+        const idx = lockedWord.typed.length;
+        const expected = idx < lockedWord.text.length ? lockedWord.text[idx] : null;
+        if (expected === char) {
+          lockedWord.typed += char;
+          totalCharsTyped++;
+          mistypedState = false;
+          sfxType();
+        } else if (mistypedState && char !== " ") {
+          const others = activeWords.filter((w) => w !== lockedWord && w.text.startsWith(char));
+          if (others.length > 0) {
+            lockedWord.typed = "";
+            lockedWord = others.reduce((a, b) => (a.y > b.y ? a : b));
+            lockedWord.typed += char;
+            totalCharsTyped++;
+            mistypedState = false;
+            sfxType();
+          } else {
+            combo = 0;
+            flashError = 5;
+            sfxError();
+            triggerRoast("mistype", nowTicks);
+          }
+        } else {
+          mistypedState = true;
+          combo = 0;
+          flashError = 5;
+          sfxError();
+          triggerRoast("mistype", nowTicks);
+        }
+      }
+
+      if (lockedWord && lockedWord.typed === lockedWord.text) {
+        combo++;
+        coins++;
+        const bonus = Math.floor(combo / 5) * 50;
+        let wordsGained = 1;
+        let phraseBonus = 0;
+
+        if (lockedWord.isPhrase) {
+          wordsGained = DIFFICULTY_SETTINGS[difficulty].phrase_words_bonus;
+          phraseBonus = 300;
+          popups.push({
+            text: `BONUS POINT! +${wordsGained}`,
+            x: lockedWord.x + lockedWord.width / 2,
+            y: lockedWord.y - 12,
+            life: 70
+          });
+          sfxBonusPhrase();
+        } else {
+          sfxCoin();
+        }
+
+        wordsCleared += wordsGained;
+        score += lockedWord.text.length * 20 + bonus + phraseBonus;
+
+        let zapped = [];
+        if (gameMode === "TYPERIA" && f3ThunderActive) {
+          zapped = getThunderTargets(lockedWord, 3);
+          f3ThunderActive = false;
+          if (zapped.length > 0) {
+            score += zapped.length * 120;
+            coins += zapped.length;
+            wordsCleared += zapped.length;
+            wordsGained += zapped.length;
+            sfxSkillThunder();
+            showBanner(`THUNDER! +${zapped.length} WORDS!`, COLORS.THUNDER_YELLOW, nowTicks);
+          }
+        }
+
+        activeWords = activeWords.filter((w) => w !== lockedWord && !zapped.includes(w));
+        recordWordsProgress(wordsGained, nowTicks);
+
+        const elapsedSec = Math.max((nowTicks - startTime) / 1000, 1);
+        const liveWpm = Math.floor(totalCharsTyped / 5 / (elapsedSec / 60));
+        if (elapsedSec >= 10) recordWpmProgress(liveWpm, nowTicks);
+
+        if (combo >= 5 && (liveWpm >= 30 || combo % 6 === 0)) {
+          triggerRoast("praise_grudging", nowTicks);
+        }
+
+        lockedWord = null;
+        mistypedState = false;
+      }
+    }
+
+    function cancelLockedWord() {
+      if (state === "SETUP") {
+        playerName = playerName.slice(0, -1);
+        sfxType();
+        return;
+      }
+      if (state === "PLAYING" && lockedWord) {
+        lockedWord.typed = "";
+        lockedWord = null;
+        mistypedState = false;
+        sfxType();
+      }
+    }
+
+    hiddenInput.addEventListener("input", (e) => {
+      const val = hiddenInput.value;
+      if (val && val.length > 0) {
+        for (const ch of val) {
+          handleCharacterInput(ch);
+        }
+        hiddenInput.value = "";
+      }
+    });
+
+    hiddenInput.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace") {
+        e.preventDefault();
+        cancelLockedWord();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (state === "SETUP") {
+          sfxCoin();
+          startGame();
+        }
+      }
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (document.activeElement === hiddenInput) return;
+      if (e.key === "Escape") {
+        if (state === "PLAYING") triggerPause();
+        else if (state === "PAUSED") resumeGame();
+        else if (["SETUP", "LEADERBOARD", "MISSIONS", "PATCHES"].includes(state)) state = "MENU";
+        else if (state === "INFO") state = infoReturn;
+        return;
+      }
+      if (e.key === "Backspace" || e.key === "Tab") {
+        e.preventDefault();
+        cancelLockedWord();
+        return;
+      }
+      if (e.key === "Enter") {
+        if (state === "MENU") state = "SETUP";
+        else if (state === "SETUP") { sfxCoin(); startGame(); }
+        else if (state === "PAUSED") resumeGame();
+        else if (state === "GAMEOVER") startGame();
+        return;
+      }
+      if (state === "PLAYING" && gameMode === "TYPERIA" && ["F1", "F2", "F3", "F4"].includes(e.key)) {
+        e.preventDefault();
+        activateSkill(e.key, performance.now());
+        return;
+      }
+      if (e.key.length === 1) {
+        handleCharacterInput(e.key);
+      }
+    });
+
+    function getCanvasCoords(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: ((clientX - rect.left) / rect.width) * WIDTH,
+        y: ((clientY - rect.top) / rect.height) * HEIGHT
+      };
+    }
+
+    let touchStartY = null;
+    canvas.addEventListener("touchstart", (e) => {
+      ensureAudio();
+      if (e.touches.length > 0) {
+        touchStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    canvas.addEventListener("touchmove", (e) => {
+      if (touchStartY === null || e.touches.length === 0) return;
+      const dy = touchStartY - e.touches[0].clientY;
+      touchStartY = e.touches[0].clientY;
+      if (state === "PATCHES") {
+        patchScrollY = Math.max(0, Math.min(maxPatchScroll, patchScrollY + dy * 1.4));
+      } else if (state === "MISSIONS") {
+        missionScrollY = Math.max(0, Math.min(maxMissionScroll, missionScrollY + dy * 1.4));
+      }
+    }, { passive: true });
+
+    canvas.addEventListener("wheel", (e) => {
+      if (state === "PATCHES") {
+        patchScrollY = Math.max(0, Math.min(maxPatchScroll, patchScrollY + e.deltaY * 0.6));
+      } else if (state === "MISSIONS") {
+        missionScrollY = Math.max(0, Math.min(maxMissionScroll, missionScrollY + e.deltaY * 0.6));
+      }
+    }, { passive: true });
+
+    canvas.addEventListener("pointerdown", (e) => {
+      ensureAudio();
+      const { x, y } = getCanvasCoords(e.clientX, e.clientY);
+      const nowTicks = performance.now();
+
+      if (state === "MENU") {
+        if (hit(BTN.versionBadge, x, y)) {
+          sfxType();
+          patchScrollY = 0;
+          state = "PATCHES";
+        } else if (hit(BTN.menuStart, x, y)) {
+          sfxType();
+          state = "SETUP";
+        } else if (hit(BTN.menuLb, x, y)) {
+          sfxType();
+          state = "LEADERBOARD";
+        } else if (hit(BTN.menuInfo, x, y)) {
+          sfxType();
+          infoReturn = "MENU";
+          state = "INFO";
+        } else if (hit(BTN.menuMissions, x, y)) {
+          sfxType();
+          missionScrollY = 0;
+          const res = evaluateMissionsAndSkills(progress);
+          unlockedSkills = res.unlocked;
+          skillCooldownsMs = res.cooldownsMs;
+          state = "MISSIONS";
+        }
+      } else if (state === "PATCHES") {
+        if (hit(BTN.backBottom, x, y)) {
+          sfxType();
+          state = "MENU";
+        }
+      } else if (state === "SETUP") {
+        if (hit(BTN.nameBox, x, y)) {
+          focusMobileKeyboard();
+        } else if (hit(BTN.easy, x, y)) {
+          difficulty = "EASY";
+          sfxType();
+        } else if (hit(BTN.med, x, y)) {
+          difficulty = "MEDIUM";
+          sfxType();
+        } else if (hit(BTN.hard, x, y)) {
+          difficulty = "HARD";
+          sfxType();
+        } else if (hit(BTN.langId, x, y)) {
+          language = "INDONESIA";
+          sfxType();
+        } else if (hit(BTN.langEn, x, y)) {
+          language = "ENGLISH";
+          sfxType();
+        } else if (hit(BTN.langPy, x, y)) {
+          language = "PYTHON";
+          sfxType();
+        } else if (hit(BTN.modeClassic, x, y)) {
+          gameMode = "CLASSIC";
+          sfxType();
+        } else if (hit(BTN.modeInfinite, x, y)) {
+          gameMode = "INFINITE";
+          sfxType();
+        } else if (hit(BTN.modeTyperia, x, y)) {
+          gameMode = "TYPERIA";
+          sfxType();
+        } else if (hit(BTN.setupPlay, x, y)) {
+          sfxCoin();
+          startGame();
+        } else if (hit(BTN.setupBack, x, y)) {
+          sfxType();
+          state = "MENU";
+        }
+      } else if (state === "LEADERBOARD") {
+        if (hit(BTN.backBottom, x, y)) {
+          sfxType();
+          state = "MENU";
+        }
+      } else if (state === "INFO") {
+        if (hit(BTN.backBottom, x, y)) {
+          sfxType();
+          state = infoReturn;
+        }
+      } else if (state === "MISSIONS") {
+        if (hit(BTN.backBottom, x, y)) {
+          sfxType();
+          state = "MENU";
+        }
+      } else if (state === "PLAYING") {
+        if (hit(BTN.hudPause, x, y)) {
+          triggerPause();
+          return;
+        }
+        if (hit(BTN.tapCancel, x, y)) {
+          cancelLockedWord();
+          focusMobileKeyboard();
+          return;
+        }
+        if (gameMode === "TYPERIA") {
+          for (const sb of skillButtons) {
+            if (hit(sb.rect, x, y)) {
+              activateSkill(sb.key, nowTicks);
+              focusMobileKeyboard();
+              return;
+            }
+          }
+        }
+        focusMobileKeyboard();
+      } else if (state === "PAUSED") {
+        if (hit(BTN.pauseResume, x, y)) resumeGame();
+        else if (hit(BTN.pauseInfo, x, y)) {
+          sfxType();
+          infoReturn = "PAUSED";
+          state = "INFO";
+        } else if (hit(BTN.pauseExit, x, y)) {
+          sfxType();
+          state = "MENU";
+        }
+      } else if (state === "GAMEOVER") {
+        if (hit(BTN.retry, x, y)) {
+          sfxCoin();
+          startGame();
+        } else if (hit(BTN.menu, x, y)) {
+          sfxType();
+          state = "MENU";
+        }
+      }
+    });
+
+    function resizeCanvas() {
+      const vv = window.visualViewport;
+      const vw = vv ? vv.width : window.innerWidth;
+      const vh = vv ? vv.height : window.innerHeight;
+      const scale = Math.min(vw / WIDTH, vh / HEIGHT);
+      canvas.style.width = `${Math.floor(WIDTH * scale)}px`;
+      canvas.style.height = `${Math.floor(HEIGHT * scale)}px`;
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", resizeCanvas);
+    }
+    resizeCanvas();
+
+    const totalPatchH = PATCH_NOTES.reduce((acc, p) => acc + 54 + p.items.length * 19 + 12, 0);
+    const patchViewH = 515;
+    const maxPatchScroll = Math.max(0, totalPatchH - patchViewH);
+
+    const totalMissionH = MISSIONS_DATA.length * 64 + 12;
+    const missionViewH = 490;
+    const maxMissionScroll = Math.max(0, totalMissionH - missionViewH);
+
+    function wrapTextLines(text, maxWidth, font) {
+      ctx.font = font;
+      const words = text.split(" ");
+      const lines = [];
+      let line = "";
+      for (const w of words) {
+        const test = line ? `${line} ${w}` : w;
+        if (ctx.measureText(test).width > maxWidth && line) {
+          lines.push(line);
+          line = w;
+        } else {
+          line = test;
+        }
+      }
+      if (line) lines.push(line);
+      return lines;
+    }
+
+    function gameLoop(nowTicks) {
+      drawBackground();
+
+      if (flashError > 0 && state === "PLAYING") {
+        ctx.fillStyle = "rgba(220, 38, 38, 0.35)";
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+        flashError--;
+      }
+      if (flashSkillTimer > 0 && state === "PLAYING" && flashSkillColor) {
+        ctx.fillStyle = flashSkillColor + "44";
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+        flashSkillTimer--;
+      }
+
+      let elapsedMin = 1;
+      if (state === "PLAYING") elapsedMin = Math.max((nowTicks - startTime) / 60000, 0.01);
+      else if ((state === "PAUSED" || (state === "INFO" && infoReturn === "PAUSED"))) {
+        elapsedMin = Math.max((pauseStartedAt - startTime) / 60000, 0.01);
+      }
+
+      const currentWpm = (state === "PLAYING" || state === "PAUSED" || (state === "INFO" && infoReturn === "PAUSED"))
+        ? Math.floor(totalCharsTyped / 5 / elapsedMin)
+        : 0;
+      const worldNum = difficulty === "EASY" ? "1-1" : difficulty === "MEDIUM" ? "1-2" : "1-3";
+
+      drawTextOutline("SCORE", "bold 16px 'Courier New'", COLORS.TEXT_WHITE, 18, 12, 2);
+      drawTextOutline(String(score).padStart(6, "0"), "bold 18px 'Courier New'", COLORS.TEXT_WHITE, 18, 32, 2);
+
+      ctx.fillStyle = COLORS.QBLOCK_GOLD;
+      ctx.beginPath();
+      ctx.ellipse(125, 40, 6, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = COLORS.BLACK;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      drawTextOutline(`x${String(coins).padStart(2, "0")}`, "bold 17px 'Courier New'", COLORS.TEXT_WHITE, 136, 32, 2);
+
+      drawTextOutline("WORLD", "bold 16px 'Courier New'", COLORS.TEXT_WHITE, 215, 12, 2);
+      drawTextOutline(` ${worldNum}`, "bold 17px 'Courier New'", COLORS.TEXT_WHITE, 215, 32, 2);
+
+      if (state === "PLAYING" || state === "PAUSED" || (state === "INFO" && infoReturn === "PAUSED")) {
+        drawTextOutline(`WPM:${currentWpm}`, "bold 15px 'Courier New'", COLORS.TEXT_GREEN, 295, 12, 2);
+        drawTextOutline(`WRD:${wordsCleared}`, "bold 15px 'Courier New'", COLORS.TEXT_CYAN, 295, 34, 2);
+        drawButton(BTN.hudPause, "PAUSE", COLORS.QBLOCK_GOLD, "bold 14px 'Courier New'");
+      } else {
+        drawTextOutline("MODE", "bold 16px 'Courier New'", COLORS.TEXT_WHITE, 385, 12, 2);
+        drawTextOutline(gameMode, "bold 16px 'Courier New'", COLORS.TEXT_GOLD, 385, 32, 2);
+      }
+
+      if (state === "MENU") {
+        drawRectBox(BTN.versionBadge.x, BTN.versionBadge.y, BTN.versionBadge.w, BTN.versionBadge.h, COLORS.STONE_DARK, COLORS.TEXT_GOLD, 2);
+        drawTextOutline(`${CURRENT_VERSION_TAG} [LOG]`, "bold 12px 'Courier New'", COLORS.TEXT_CYAN, BTN.versionBadge.x + BTN.versionBadge.w / 2, BTN.versionBadge.y + 8, 1, true);
+
+        marioX += 1.4;
+        if (marioX > 320) marioX = 35;
+        drawPixelMario(Math.floor(marioX), HEIGHT - 117, Math.floor(marioX / 10));
+
+        drawTextOutline("TYPING.io", "bold 58px 'Courier New'", COLORS.MARIO_RED, WIDTH / 2, 130, 4, true);
+        drawTextOutline("upgrade your typing skill", "bold 18px 'Courier New'", COLORS.TEXT_CYAN, WIDTH / 2, 204, 2, true);
+        drawTextOutline("Made by RAFLI ALI RABANI", "bold 15px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 236, 2, true);
+
+        const doneCount = (progress.completed_missions || []).length;
+        drawButton(BTN.menuStart, "START GAME", COLORS.QBLOCK_GOLD, "bold 19px 'Courier New'");
+        drawButton(BTN.menuLb, "LEADERBOARD", COLORS.PIPE_GREEN, "bold 19px 'Courier New'");
+        drawButton(BTN.menuInfo, "INFORMATION", COLORS.INFO_BLUE, "bold 19px 'Courier New'");
+        drawButton(BTN.menuMissions, `MISSIONS (${doneCount}/12)`, COLORS.BOSS_PURPLE, "bold 18px 'Courier New'");
+
+        if (Math.floor(nowTicks / 500) % 2 === 0) {
+          drawTextOutline("TAP TO START", "bold 16px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, HEIGHT - 36, 2, true);
+        }
+      } else if (state === "PATCHES") {
+        drawStoneBox(20, 78, WIDTH - 40, 645);
+        drawTextOutline("PATCH UPDATE HISTORY", "bold 20px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 95, 2, true);
+
+        const vp = { x: 34, y: 132, w: WIDTH - 78, h: patchViewH };
+        ctx.fillStyle = "#1c1c22";
+        ctx.fillRect(vp.x, vp.y, vp.w, vp.h);
+        ctx.strokeStyle = COLORS.STONE_GRAY;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(vp.x, vp.y, vp.w, vp.h);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(vp.x, vp.y, vp.w, vp.h);
+        ctx.clip();
+
+        let cy = vp.y + 10 - patchScrollY;
+        for (const p of PATCH_NOTES) {
+          const cardH = 48 + p.items.length * 19;
+          drawRectBox(vp.x + 8, cy, vp.w - 16, cardH, p.is_major ? "#342244" : "#262c34", p.is_major ? COLORS.TEXT_GOLD : COLORS.STONE_LIGHT, 2);
+          drawTextOutline(p.version, "bold 12px 'Courier New'", p.is_major ? COLORS.TEXT_GOLD : COLORS.TEXT_GREEN, vp.x + 16, cy + 7, 1);
+          drawTextOutline(p.date, "bold 11px 'Courier New'", COLORS.TEXT_CYAN, vp.x + 16, cy + 24, 1);
+          p.items.forEach((it, idx) => {
+            drawTextOutline(it, "bold 11px 'Courier New'", COLORS.TEXT_WHITE, vp.x + 16, cy + 42 + idx * 19, 1);
+          });
+          cy += cardH + 10;
+        }
+        ctx.restore();
+
+        const sbX = vp.x + vp.w + 6;
+        ctx.fillStyle = "#18181c";
+        ctx.fillRect(sbX, vp.y, 10, vp.h);
+        if (maxPatchScroll > 0) {
+          const thumbH = Math.max(36, vp.h * (vp.h / totalPatchH));
+          const thumbY = vp.y + (vp.h - thumbH) * (patchScrollY / maxPatchScroll);
+          ctx.fillStyle = COLORS.QBLOCK_GOLD;
+          ctx.fillRect(sbX + 1, thumbY, 8, thumbH);
+        }
+
+        drawButton(BTN.backBottom, "BACK TO MENU", COLORS.QBLOCK_GOLD);
+      } else if (state === "SETUP") {
+        drawStoneBox(22, 85, WIDTH - 44, 505);
+        drawTextOutline("GAME SETUP", "bold 22px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 106, 2, true);
+
+        const dispName = playerName ? playerName : "PLAYER1";
+        drawRectBox(BTN.nameBox.x, BTN.nameBox.y, BTN.nameBox.w, BTN.nameBox.h, COLORS.BRICK_ORANGE, COLORS.BLACK, 2);
+        drawTextOutline(`NAME: ${dispName} (TAP)`, "bold 17px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, BTN.nameBox.y + 12, 2, true);
+
+        drawTextOutline("1. SELECT LEVEL", "bold 14px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, 222, 1, true);
+        drawButton(BTN.easy, "EASY", difficulty === "EASY" ? COLORS.PIPE_GREEN : COLORS.STONE_GRAY, "bold 15px 'Courier New'");
+        drawButton(BTN.med, "MEDIUM", difficulty === "MEDIUM" ? COLORS.QBLOCK_GOLD : COLORS.STONE_GRAY, "bold 15px 'Courier New'");
+        drawButton(BTN.hard, "HARD", difficulty === "HARD" ? COLORS.MARIO_RED : COLORS.STONE_GRAY, "bold 15px 'Courier New'");
+
+        drawTextOutline("2. WORD LANGUAGE", "bold 14px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, 308, 1, true);
+        drawButton(BTN.langId, "INDONESIA", language === "INDONESIA" ? COLORS.PIPE_GREEN : COLORS.STONE_GRAY, "bold 14px 'Courier New'");
+        drawButton(BTN.langEn, "ENGLISH", language === "ENGLISH" ? COLORS.QBLOCK_GOLD : COLORS.STONE_GRAY, "bold 14px 'Courier New'");
+        drawButton(BTN.langPy, "PYTHON", language === "PYTHON" ? COLORS.INFO_BLUE : COLORS.STONE_GRAY, "bold 14px 'Courier New'");
+
+        drawTextOutline("3. GAME MODE", "bold 14px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, 396, 1, true);
+        drawButton(BTN.modeClassic, "CLASSIC (5)", gameMode === "CLASSIC" ? COLORS.PIPE_GREEN : COLORS.STONE_GRAY, "bold 13px 'Courier New'");
+        drawButton(BTN.modeInfinite, "INFINITE (1)", gameMode === "INFINITE" ? COLORS.MARIO_RED : COLORS.STONE_GRAY, "bold 13px 'Courier New'");
+        drawButton(BTN.modeTyperia, "TYPERIA", gameMode === "TYPERIA" ? COLORS.BOSS_PURPLE : COLORS.STONE_GRAY, "bold 14px 'Courier New'");
+
+        drawButton(BTN.setupPlay, "PLAY NOW", COLORS.QBLOCK_GOLD, "bold 18px 'Courier New'");
+        drawButton(BTN.setupBack, "BACK", COLORS.STONE_GRAY, "bold 16px 'Courier New'");
+      } else if (state === "LEADERBOARD") {
+        drawStoneBox(22, 110, WIDTH - 44, 430);
+        drawTextOutline("TOP 5 HIGH SCORES", "bold 22px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 134, 2, true);
+        const scores = loadHighscores();
+        if (scores.length === 0) {
+          drawTextOutline("NO RECORDS YET!", "bold 18px 'Courier New'", COLORS.TEXT_WHITE, WIDTH / 2, 300, 2, true);
+        } else {
+          scores.forEach((s, idx) => {
+            const line = `${idx + 1}. ${s.name.padEnd(8, " ")} ${String(s.score).padStart(6, "0")} | ${s.wpm}WPM`;
+            const sub = `   ${s.difficulty} [${s.lang.slice(0, 3)}/${s.mode.slice(0, 3)}]`;
+            drawTextOutline(line, "bold 16px 'Courier New'", idx === 0 ? COLORS.TEXT_GREEN : COLORS.TEXT_WHITE, 42, 190 + idx * 62, 1);
+            drawTextOutline(sub, "bold 13px 'Courier New'", COLORS.TEXT_CYAN, 42, 212 + idx * 62, 1);
+          });
+        }
+        drawButton(BTN.backBottom, "BACK TO MENU", COLORS.QBLOCK_GOLD);
+      } else if (state === "INFO") {
+        drawStoneBox(20, 78, WIDTH - 40, 645);
+        drawTextOutline("HOW TO PLAY", "bold 22px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 96, 2, true);
+
+        const infoLines = [
+          ["[CARA BERMAIN]", COLORS.TEXT_CYAN],
+          ["1. Tap bar input bawah untuk membuka keyboard HP.", COLORS.TEXT_WHITE],
+          ["2. Ketik kata jatuh sebelum menyentuh garis merah.", COLORS.TEXT_WHITE],
+          ["3. Jika typo: lanjutkan sisa huruf ATAU ketik awal", COLORS.TEXT_WHITE],
+          ["   kata lain untuk pindah target. Tap CANCEL batal.", COLORS.TEXT_WHITE],
+          ["", COLORS.TEXT_WHITE],
+          ["[MODE & BONUS KALIMAT]", COLORS.TEXT_GREEN],
+          ["4. CLASSIC (5 nyawa) | INFINITE (1) | TYPERIA (3+Skill).", COLORS.TEXT_WHITE],
+          ["5. MEDIUM (tiap 15 kata) & HARD (tiap 20 kata) muncul", COLORS.TEXT_WHITE],
+          ["   Bonus Kalimat (+10 kata Med / +15 kata Hard).", COLORS.TEXT_WHITE],
+          ["", COLORS.TEXT_WHITE],
+          ["[SKILL SENTUH MODE TYPERIA]", COLORS.TEXT_GOLD],
+          ["- SLOW (15s)   : Perlambat kata jatuh 1,5 detik.", COLORS.TEXT_WHITE],
+          ["- PUSH (20s)   : Dorong mundur kata bagian atas.", COLORS.TEXT_WHITE],
+          ["- THUNDER (30s): Petir sambar 3 kata terdekat.", COLORS.TEXT_WHITE],
+          ["- ADIOS (60s)  : Hancurkan semua kata di layar.", COLORS.TEXT_WHITE]
+        ];
+
+        infoLines.forEach(([txt, col], i) => {
+          if (txt) drawTextOutline(txt, "bold 13px 'Courier New'", col, 34, 138 + i * 32, 1);
+        });
+
+        drawButton(BTN.backBottom, infoReturn === "PAUSED" ? "BACK TO PAUSE" : "BACK TO MENU", COLORS.QBLOCK_GOLD);
+      } else if (state === "MISSIONS") {
+        drawStoneBox(20, 78, WIDTH - 40, 645);
+        drawTextOutline("MISSION & ACHIEVEMENT", "bold 20px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 94, 2, true);
+
+        const statStr = `EASY:${progress.easy_words} | MED:${progress.medium_words} | HARD:${progress.hard_words} | WPM:${progress.best_hard_wpm}`;
+        drawTextOutline(statStr, "bold 12px 'Courier New'", COLORS.TEXT_CYAN, WIDTH / 2, 124, 1, true);
+
+        const vp = { x: 34, y: 150, w: WIDTH - 78, h: missionViewH };
+        ctx.fillStyle = "#1c1c22";
+        ctx.fillRect(vp.x, vp.y, vp.w, vp.h);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(vp.x, vp.y, vp.w, vp.h);
+        ctx.clip();
+
+        const compSet = new Set(progress.completed_missions || []);
+        let my = vp.y + 8 - missionScrollY;
+        for (const m of MISSIONS_DATA) {
+          const isDone = compSet.has(m.id);
+          const curV = progress[m.stat] || 0;
+          drawRectBox(vp.x + 8, my, vp.w - 16, 56, isDone ? "#145f23" : "#2a2a30", isDone ? COLORS.TEXT_GREEN : COLORS.STONE_LIGHT, 2);
+          drawTextOutline(m.title, "bold 13px 'Courier New'", COLORS.TEXT_WHITE, vp.x + 16, my + 8, 1);
+          const tag = isDone ? "[DONE]" : `[${Math.min(curV, m.target)}/${m.target}]`;
+          drawTextOutline(tag, "bold 12px 'Courier New'", isDone ? COLORS.TEXT_GREEN : COLORS.TEXT_GOLD, vp.x + vp.w - 86, my + 8, 1);
+          drawTextOutline(`Reward: ${m.reward}`, "bold 12px 'Courier New'", isDone ? COLORS.TEXT_GOLD : COLORS.TEXT_CYAN, vp.x + 16, my + 30, 1);
+          my += 64;
+        }
+        ctx.restore();
+
+        const sbX = vp.x + vp.w + 6;
+        ctx.fillStyle = "#18181c";
+        ctx.fillRect(sbX, vp.y, 10, vp.h);
+        if (maxMissionScroll > 0) {
+          const thumbH = Math.max(36, vp.h * (vp.h / totalMissionH));
+          const thumbY = vp.y + (vp.h - thumbH) * (missionScrollY / maxMissionScroll);
+          ctx.fillStyle = COLORS.QBLOCK_GOLD;
+          ctx.fillRect(sbX + 1, thumbY, 8, thumbH);
+        }
+
+        drawButton(BTN.backBottom, "BACK TO MENU", COLORS.QBLOCK_GOLD);
+      } else if (state === "PLAYING" || state === "PAUSED") {
+        const bottomReserve = gameMode === "TYPERIA" ? 205 : 140;
+        activeDangerY = HEIGHT - bottomReserve;
+
+        const isSlowed = gameMode === "TYPERIA" && nowTicks < f1SlowUntil;
+        const speedScale = isSlowed ? 0.3 : 1.0;
+
+        if (state === "PLAYING") {
+          const settings = DIFFICULTY_SETTINGS[difficulty];
+          const speedMult = Math.min(1.35, 1 + score / 7000);
+
+          if (nowTicks >= nextSpawnTime && activeWords.length < settings.max_active) {
+            const pInt = settings.phrase_every;
+            const spawnPhrase = pInt !== null && wordsCleared >= nextPhraseMilestone && !activeWords.some((w) => w.isPhrase);
+            if (spawnPhrase) {
+              const pStr = CHALLENGE_PHRASES[language][Math.floor(Math.random() * CHALLENGE_PHRASES[language].length)];
+              spawnWord(pStr, Math.max(0.85, settings.speed * 0.72), true);
+              nextPhraseMilestone = wordsCleared + pInt + settings.phrase_words_bonus;
+              sfxChallenge();
+              nextSpawnTime = nowTicks + settings.spawn_rate / speedMult + 4600;
+            } else {
+              const wStr = pickBalancedWord(WORD_BANK[language][difficulty]);
+              spawnWord(wStr, settings.speed * speedMult, false);
+              nextSpawnTime = nowTicks + settings.spawn_rate / speedMult;
+            }
+          }
+
+          for (let i = activeWords.length - 1; i >= 0; i--) {
+            const w = activeWords[i];
+            w.y += w.speed * speedScale;
+            if (w.y + 34 >= activeDangerY) {
+              if (w === lockedWord) {
+                lockedWord = null;
+                mistypedState = false;
+              }
+              activeWords.splice(i, 1);
+              lives--;
+              combo = 0;
+              flashError = 8;
+              sfxError();
+              triggerRoast("hit", nowTicks, true);
+            }
+          }
+
+          if (activeWords.length > 0) {
+            const lowestY = Math.max(...activeWords.map((w) => w.y));
+            if (lowestY >= activeDangerY - 95) triggerRoast("danger", nowTicks);
+            else if (nowTicks - lastKeystrokeTicks > 3200) triggerRoast("slow", nowTicks);
+          }
+
+          for (let i = popups.length - 1; i >= 0; i--) {
+            popups[i].y -= 1.2;
+            popups[i].life--;
+            if (popups[i].life <= 0) popups.splice(i, 1);
+          }
+
+          if (lives <= 0) {
+            finalWpm = currentWpm;
+            finalAccuracy = Math.round((totalCharsTyped / Math.max(totalKeystrokes, 1)) * 1000) / 10;
+            if (totalCharsTyped >= 25) recordWpmProgress(finalWpm, nowTicks);
+            saveHighscore(playerName || "PLAYER1", score, finalWpm, difficulty, language, gameMode);
+            sfxGameOver();
+            hiddenInput.blur();
+            state = "GAMEOVER";
+          }
+        }
+
+        let thunderTargets = [];
+        if (gameMode === "TYPERIA" && f3ThunderActive && lockedWord) {
+          thunderTargets = getThunderTargets(lockedWord, 3);
+          for (const tw of thunderTargets) {
+            drawLightningArc(
+              [lockedWord.x + lockedWord.width / 2, lockedWord.y + 14],
+              [tw.x + tw.width / 2, tw.y + 14]
+            );
+          }
+        }
+
+        for (const w of activeWords) {
+          const isLocked = w === lockedWord;
+          const isTarget = thunderTargets.includes(w);
+          const pad = w.isPhrase ? 10 : 9;
+          const bh = w.isPhrase ? 38 : 34;
+
+          let bg = COLORS.BRICK_ORANGE;
+          let shine = COLORS.BRICK_LIGHT;
+          let border = COLORS.BLACK;
+
+          if (w.isPhrase) {
+            bg = isLocked ? COLORS.QBLOCK_GOLD : COLORS.BOSS_PURPLE;
+            shine = isLocked ? COLORS.QBLOCK_SHINE : COLORS.BOSS_SHINE;
+          } else if (isLocked) {
+            bg = COLORS.QBLOCK_GOLD;
+            shine = COLORS.QBLOCK_SHINE;
+          } else if (isTarget) {
+            bg = "#b48c14";
+            shine = COLORS.THUNDER_YELLOW;
+            border = COLORS.THUNDER_YELLOW;
+          } else if (isSlowed) {
+            bg = "#1973af";
+            shine = COLORS.ICE_CYAN;
+            border = COLORS.ICE_CYAN;
+          }
+
+          drawRectBox(w.x - pad, w.y - 5, w.width + pad * 2, bh, bg, border, 3, shine);
+          if (w.isPhrase) {
+            drawTextOutline("BONUS PHRASE", "bold 11px 'Courier New'", COLORS.TEXT_GOLD, w.x + w.width / 2, w.y - 19, 1, true);
+          }
+          const tw = drawTextOutline(w.typed, w.font, COLORS.TEXT_GREEN, w.x, w.y, 2);
+          drawTextOutline(w.text.slice(w.typed.length), w.font, COLORS.TEXT_WHITE, w.x + tw, w.y, 2);
+        }
+
+        for (const p of popups) {
+          drawTextOutline(p.text, "bold 16px 'Courier New'", COLORS.THUNDER_YELLOW, p.x, p.y, 2, true);
+        }
+
+        ctx.strokeStyle = COLORS.MARIO_RED;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(0, activeDangerY);
+        ctx.lineTo(WIDTH, activeDangerY);
+        ctx.stroke();
+
+        const lifeStr = gameMode === "INFINITE" ? "1-UP:♥" : `HP:${"♥".repeat(Math.max(0, lives))}`;
+        drawTextOutline(lifeStr, "bold 16px 'Courier New'", COLORS.MARIO_RED, 16, activeDangerY + 10, 2);
+
+        const activeBubble = nowTicks < roastUntil ? roastText : "";
+        drawMrRoasting(WIDTH - 64, activeDangerY - 52, roastMood, activeBubble, nowTicks);
+
+        const barY = activeDangerY + 34;
+        BTN.tapKeyboard.y = barY;
+        BTN.tapCancel.y = barY;
+        drawRectBox(BTN.tapKeyboard.x, BTN.tapKeyboard.y, BTN.tapKeyboard.w, BTN.tapKeyboard.h, "#22252e", COLORS.TEXT_CYAN, 2);
+        const promptTxt = lockedWord ? `TARGET: ${lockedWord.text}` : "TAP HERE TO OPEN KEYBOARD";
+        drawTextOutline(promptTxt, "bold 14px 'Courier New'", lockedWord ? COLORS.TEXT_GOLD : COLORS.TEXT_CYAN, BTN.tapKeyboard.x + BTN.tapKeyboard.w / 2, barY + 15, 1, true);
+        drawButton(BTN.tapCancel, "CANCEL", COLORS.MARIO_RED, "bold 14px 'Courier New'");
+
+        skillButtons = [];
+        if (gameMode === "TYPERIA") {
+          const skills = [
+            { key: "F1", label: "SLOW", unlocked: unlockedSkills.F1, cd: f1CdUntil, col: COLORS.ICE_CYAN, active: isSlowed },
+            { key: "F2", label: "PUSH", unlocked: unlockedSkills.F2, cd: f2CdUntil, col: COLORS.PIPE_LIGHT, active: false },
+            { key: "F3", label: "THUNDER", unlocked: unlockedSkills.F3, cd: f3CdUntil, col: COLORS.THUNDER_YELLOW, active: f3ThunderActive },
+            { key: "F4", label: "ADIOS", unlocked: unlockedSkills.F4, cd: f4CdUntil, col: COLORS.MARIO_RED, active: false }
+          ];
+          const sw = 106;
+          const sh = 54;
+          const gap = 8;
+          const sx0 = (WIDTH - (sw * 4 + gap * 3)) / 2;
+          const sy = barY + 52;
+
+          skills.forEach((sk, i) => {
+            const rect = { x: sx0 + i * (sw + gap), y: sy, w: sw, h: sh };
+            skillButtons.push({ key: sk.key, rect });
+
+            let bg = "#232328";
+            let status = "LOCKED";
+            let sCol = COLORS.MARIO_RED;
+            let top = COLORS.STONE_DARK;
+
+            if (sk.unlocked) {
+              const rem = Math.max(0, (sk.cd - nowTicks) / 1000);
+              if (sk.active) {
+                bg = sk.col;
+                status = "ACTIVE!";
+                sCol = COLORS.BLACK;
+                top = COLORS.QBLOCK_SHINE;
+              } else if (rem > 0) {
+                bg = COLORS.STONE_DARK;
+                status = `${rem.toFixed(1)}s`;
+                sCol = COLORS.TEXT_GOLD;
+                top = COLORS.STONE_GRAY;
+              } else {
+                bg = COLORS.PIPE_GREEN;
+                status = `TAP (${skillCooldownsMs[sk.key] / 1000}s)`;
+                sCol = COLORS.TEXT_WHITE;
+                top = COLORS.QBLOCK_SHINE;
+              }
+            }
+
+            drawRectBox(rect.x, rect.y, rect.w, rect.h, bg, COLORS.BLACK, 2, top);
+            drawTextOutline(sk.label, "bold 14px 'Courier New'", sk.unlocked ? COLORS.TEXT_WHITE : COLORS.STONE_LIGHT, rect.x + rect.w / 2, rect.y + 8, 1, true);
+            drawTextOutline(status, "bold 11px 'Courier New'", sCol, rect.x + rect.w / 2, rect.y + 30, sCol === COLORS.BLACK ? 0 : 1, true);
+          });
+        }
+
+        if (nowTicks < skillBannerUntil && skillBannerText) {
+          drawTextOutline(skillBannerText, "bold 16px 'Courier New'", COLORS.THUNDER_YELLOW, WIDTH / 2, 66, 2, true);
+        }
+
+        if (state === "PAUSED") {
+          ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+          ctx.fillRect(0, 0, WIDTH, HEIGHT);
+          drawStoneBox(45, 230, WIDTH - 90, 315);
+          drawTextOutline("GAME PAUSED", "bold 24px 'Courier New'", COLORS.TEXT_GOLD, WIDTH / 2, 255, 2, true);
+          drawButton(BTN.pauseResume, "RESUME", COLORS.PIPE_GREEN);
+          drawButton(BTN.pauseInfo, "INFORMATION", COLORS.INFO_BLUE);
+          drawButton(BTN.pauseExit, "EXIT TO MENU", COLORS.MARIO_RED);
+        }
+      } else if (state === "GAMEOVER") {
+        drawTextOutline("GAME OVER", "bold 54px 'Courier New'", COLORS.MARIO_RED, WIDTH / 2, 130, 4, true);
+        drawStoneBox(32, 225, WIDTH - 64, 285);
+
+        const stats = [
+          `PLAYER : ${playerName || "PLAYER1"}`,
+          `MODE   : ${gameMode} (${language})`,
+          `LEVEL  : ${difficulty} (${wordsCleared} WRD)`,
+          `SCORE  : ${String(score).padStart(6, "0")}`,
+          `SPEED  : ${finalWpm} WPM (${finalAccuracy}%)`
+        ];
+        stats.forEach((st, i) => {
+          drawTextOutline(st, "bold 18px 'Courier New'", i === 3 ? COLORS.TEXT_GOLD : COLORS.TEXT_WHITE, 54, 252 + i * 48, 2);
+        });
+
+        drawButton(BTN.retry, "RETRY", COLORS.PIPE_GREEN);
+        drawButton(BTN.menu, "MAIN MENU", COLORS.QBLOCK_GOLD);
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
